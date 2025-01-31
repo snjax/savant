@@ -17,13 +17,15 @@ from haystack.components.routers import FileTypeRouter
 from haystack.components.generators import OpenAIGenerator
 from haystack.components.builders.prompt_builder import PromptBuilder
 from haystack.utils import Secret
-from haystack.components.converters import MarkdownToDocument
 from haystack.components.converters import TextFileToDocument
 from haystack.components.joiners import DocumentJoiner
 
 
-
-OPENAI_URL = "http://127.0.0.1:1234/v1"
+# LLM Configuration with environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "test")
+# Use default OpenAI API URL if a real API key is provided, otherwise use the local URL
+OPENAI_URL = None if OPENAI_API_KEY != "test" else os.getenv("OPENAI_API_BASE_URL", "http://127.0.0.1:1234/v1")
+OPENAI_TIMEOUT = int(os.getenv("OPENAI_TIMEOUT", "1000000"))
 
 
 template = """
@@ -77,7 +79,11 @@ def check_directory_for_errors(file_path):
     })["cleaner"]["documents"]
 
     llm_pipeline = Pipeline()
-    llm_pipeline.add_component("llm", OpenAIGenerator(api_base_url=OPENAI_URL, api_key=Secret.from_token("test"), timeout=1000000))
+    llm_pipeline.add_component("llm", OpenAIGenerator(
+        **({"api_base_url": OPENAI_URL} if OPENAI_URL else {}),
+        api_key=Secret.from_token(OPENAI_API_KEY),
+        timeout=OPENAI_TIMEOUT
+    ))
     llm_pipeline.add_component("prompt_builder", PromptBuilder(template=template))
     llm_pipeline.connect("prompt_builder", "llm")
 
