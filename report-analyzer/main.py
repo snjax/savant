@@ -37,7 +37,7 @@ Line numbers are optional. Use them if they are specified in the issue, leave em
 Analyze the document step by step:
 1. Extract the url of the repository from the document. Only use the unfixed commit URL.
 2. Make a list of all issues using the following format: "Issue Title" | "Issue Severity" | "File name" | "Line Numbers"
-3. Make a list of issues between "<<<<< ISSUE"S" and ">>>>> ISSUES" in the following markdown format:
+3. Make a list of issues between "<<<<< ISSUES" and ">>>>> ISSUES" in the following markdown format:
 
 <<<<<<< ISSUES
 ## [Issue title]
