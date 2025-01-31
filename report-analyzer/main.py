@@ -5,13 +5,9 @@ from pathlib import Path
 
 
 from haystack import Pipeline
-from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.components.converters import PyPDFToDocument
 from haystack.components.preprocessors import DocumentCleaner
-from haystack.components.preprocessors import DocumentSplitter
-from haystack.components.writers import DocumentWriter
-from haystack.components.embedders import SentenceTransformersTextEmbedder
-from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
+# from haystack.components.preprocessors import DocumentSplitter
 from haystack.components.joiners import DocumentJoiner
 from haystack.components.routers import FileTypeRouter
 from haystack.components.generators import OpenAIGenerator
@@ -93,8 +89,6 @@ def check_directory_for_errors(file_path):
         result = llm_pipeline.run({
             "prompt_builder": {"document": doc.content},
         })["llm"]["replies"][0]
-
-        print("RESULT", result, "RESULT END\n\n")
 
         issues = re.findall(r"<<<<<<< ISSUES\n(.*)\n>>>>>>> ISSUES", result, re.DOTALL)
         res = issues[-1]
