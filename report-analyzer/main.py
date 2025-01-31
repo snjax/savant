@@ -99,13 +99,19 @@ def check_directory_for_errors(file_path):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python main.py <input_file> [output_file]")
+        sys.exit(1)
+
     file_path = sys.argv[1]
+    output_file = sys.argv[2] if len(sys.argv) > 2 else './issues.md'
+    
     issues = check_directory_for_errors(file_path)
 
     title = file_path.split('/')[-1]
     issues = f"\n# {title}\n\n{issues}"
 
-    with open('./issues.md', 'a') as f:
+    with open(output_file, 'a') as f:
         f.write(issues)
 
     print(issues)
