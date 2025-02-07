@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
+    <!-- Styles -->
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+        </marker>
+    </defs>
+    
+    <!-- Boxes -->
+    <!-- Project Code -->
+    <rect x="50" y="50" width="150" height="60" rx="5" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+    <text x="125" y="85" text-anchor="middle" font-family="Arial" font-size="14">Project Codebase</text>
+    
+    <!-- Documentation -->
+    <rect x="50" y="250" width="150" height="60" rx="5" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+    <text x="125" y="285" text-anchor="middle" font-family="Arial" font-size="14">Project Documentation</text>
+    
+    <!-- Hypothesis Generator -->
+    <rect x="300" y="150" width="150" height="60" rx="5" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+    <text x="375" y="185" text-anchor="middle" font-family="Arial" font-size="14">Hypothesis Generator</text>
+    
+    <!-- Hypothesis Critic -->
+    <rect x="550" y="150" width="150" height="60" rx="5" fill="#fff3e0" stroke="#ef6c00" stroke-width="2"/>
+    <text x="625" y="185" text-anchor="middle" font-family="Arial" font-size="14">Hypothesis Critic</text>
+    
+    <!-- Vulnerability Report -->
+    <rect x="550" y="300" width="150" height="60" rx="5" fill="#fce4ec" stroke="#c2185b" stroke-width="2"/>
+    <text x="625" y="335" text-anchor="middle" font-family="Arial" font-size="14">Vulnerability Report</text>
+    
+    <!-- Arrows -->
+    <!-- Code to Generator -->
+    <line x1="200" y1="80" x2="300" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    
+    <!-- Documentation to Generator -->
+    <line x1="200" y1="280" x2="300" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    
+    <!-- Generator to Critic -->
+    <line x1="450" y1="180" x2="550" y2="180" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    
+    <!-- Critic to Report -->
+    <line x1="625" y1="210" x2="625" y2="300" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+</svg>
