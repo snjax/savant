@@ -1,7 +1,11 @@
 # savant 🤖
 Smart Contract auditing agent for Agentic Ethereum Hackathon
 
-> ⚠️ **Important Notice**: This repository contains one of our intermediate prototypes. We are currently withholding the release of our final version due to its exceptional effectiveness at discovering critical vulnerabilities in smart contracts. The final version will be published after careful consideration of responsible disclosure practices.
+> ⚠️ **Important Notice**: This repository contains limited version of the final product. We are currently withholding the full version due to its exceptional effectiveness at discovering critical vulnerabilities in smart contracts. The full version will be published after careful consideration of responsible disclosure practices.
+
+## Bug finding example 🐛
+
+![Bug finding example](assets/2025-02-08_02-17.png)
 
 ## System Architecture 🏗️
 
