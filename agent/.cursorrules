@@ -1,0 +1,4 @@
+This is uv python project. 
+Add packages with `uv add <package_name>`.
+Run ruff check with `uv run ruff check <file_name>`.
+Run ruff format with `uv run ruff format <file_name>`.
