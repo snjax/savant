@@ -12,9 +12,16 @@ from pymongo import MongoClient
 from bson import ObjectId
 import threading
 import time
+import logging
 from werkzeug.datastructures import FileStorage
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev')
@@ -27,23 +34,35 @@ _docker_client = None
 def get_docker_client():
     global _docker_client
     if _docker_client is None:
+        logger.info("Initializing Docker client")
         # Check common Docker socket locations
         socket_locations = [
             '/var/run/docker.sock',  # Linux
             '~/.docker/run/docker.sock',  # macOS
-            os.path.expanduser('~/.docker/desktop/docker.sock'),  # newer macOS Docker Desktop
+            '~/.docker/desktop/docker.sock',  # newer macOS Docker Desktop
         ]
         
         for socket in socket_locations:
             expanded_socket = os.path.expanduser(socket)
+            logger.debug(f"Checking Docker socket at: {expanded_socket}")
             if os.path.exists(expanded_socket):
-                _docker_client = docker.DockerClient(
-                    base_url=f'unix://{expanded_socket}',
-                    version='auto'
-                )
-                return _docker_client
+                try:
+                    logger.info(f"Found Docker socket at: {expanded_socket}")
+                    _docker_client = docker.DockerClient(
+                        base_url=f'unix://{expanded_socket}',
+                        version='auto'
+                    )
+                    # Test the connection
+                    _docker_client.ping()
+                    logger.info("Docker client initialized successfully")
+                    return _docker_client
+                except Exception as e:
+                    logger.error(f"Failed to connect to Docker at {expanded_socket}: {e}")
+                    continue
                 
-        raise RuntimeError("Docker socket not found in any of the expected locations")
+        error_msg = "Docker socket not found in any of the expected locations"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
     return _docker_client
 
 # MongoDB setup
@@ -59,21 +78,25 @@ processing_lock = threading.Lock()
 
 def process_request(req: Dict[str, Any]):
     """Process a request using Docker"""
+    logger.info(f"Starting to process request {req['id']}")
     try:
         # Ensure the request document exists in the database for upsert support in mongomock
         if requests_collection.find_one({'_id': ObjectId(req['id'])}) is None:
             new_doc = {'_id': ObjectId(req['id'])}
             requests_collection.insert_one(new_doc)
+            logger.info(f"Created new document for request {req['id']}")
 
         requests_collection.update_one(
             {'_id': ObjectId(req['id'])},
             {'$set': {'status': 'processing'}},
             upsert=True
         )
+        logger.info(f"Updated request {req['id']} status to processing")
         
         request_dir = os.path.join('requests', req['id'])
         source_file = os.path.join(request_dir, 'source.sol')
         
+        logger.info(f"Starting Docker container for request {req['id']}")
         # For demo purposes, use a simple container that just copies the file
         container = get_docker_client().containers.run(
             'alpine:latest',
@@ -89,13 +112,17 @@ def process_request(req: Dict[str, Any]):
         )
 
         try:
+            logger.info(f"Waiting for container to complete for request {req['id']}")
             result = container.wait()
             
             logs = container.logs()
+            logger.info(f"Container logs for request {req['id']}: {logs.decode('utf-8')}")
+            
             with open(os.path.join(request_dir, 'output.log'), 'wb') as f:
                 f.write(logs)
             
             new_status = 'completed' if result['StatusCode'] == 0 else 'failed'
+            logger.info(f"Request {req['id']} completed with status {new_status}")
             requests_collection.update_one(
                 {'_id': ObjectId(req['id'])},
                 {'$set': {'status': new_status}},
@@ -104,10 +131,12 @@ def process_request(req: Dict[str, Any]):
         finally:
             try:
                 container.remove(force=True)
-            except:
-                pass  # Ignore errors during cleanup
+                logger.info(f"Cleaned up container for request {req['id']}")
+            except Exception as e:
+                logger.error(f"Failed to remove container for request {req['id']}: {e}")
 
     except Exception as e:
+        logger.error(f"Error processing request {req['id']}: {e}", exc_info=True)
         with open(os.path.join(request_dir, 'output.log'), 'w') as f:
             f.write(f'Error: {str(e)}')
         requests_collection.update_one(
@@ -119,6 +148,7 @@ def process_request(req: Dict[str, Any]):
 def background_worker():
     """Background worker that processes requests from the queue"""
     global should_stop
+    logger.info("Background worker started")
     while True:
         try:
             # Check for pending requests in the database
@@ -128,31 +158,40 @@ def background_worker():
             )
 
             if pending_request:
+                logger.info(f"Found pending request: {pending_request['_id']}")
                 pending_request['id'] = str(pending_request['_id'])
                 process_request(pending_request)
             else:
+                logger.debug("No pending requests found, waiting...")
                 time.sleep(1)
 
         except Exception as e:
-            print(f"Error in background worker: {e}")
+            logger.error(f"Error in background worker: {e}", exc_info=True)
             time.sleep(1)
         if should_stop.is_set():
+            logger.info("Background worker stopping")
             break
 
 def start_background_worker():
     """Start the background worker thread"""
     global processing_thread, should_stop
+    logger.info("Starting background worker thread")
     should_stop.clear()
     if processing_thread is None or not processing_thread.is_alive():
         processing_thread = threading.Thread(target=background_worker, daemon=True)
         processing_thread.start()
+        logger.info("Background worker thread started")
+    else:
+        logger.warning("Background worker thread already running")
 
 def stop_background_worker():
     """Stop the background worker thread"""
     global should_stop
+    logger.info("Stopping background worker thread")
     should_stop.set()
     if processing_thread:
         processing_thread.join(timeout=5)
+        logger.info("Background worker thread stopped")
 
 class User(UserMixin):
     def __init__(self, user_id: str, email: str, name: str):
