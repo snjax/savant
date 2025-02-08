@@ -3,7 +3,7 @@
   import { navigate } from 'svelte-routing';
   import { user } from '../lib/auth';
   import type { Request } from '../lib/api';
-  import { getUserRequests, getRequestLogs } from '../lib/api';
+  import { getUserRequests, getRequestLogs, getRequestSource } from '../lib/api';
 
   export let userId: string;
   
@@ -14,7 +14,7 @@
   let error: string | null = null;
   let isSourceVisible = false;
 
-  $: if (selectedRequest) {
+  $: if (selectedRequest && !isSourceVisible) {
     updateLogs();
   }
 
@@ -77,13 +77,7 @@
     isSourceVisible = !isSourceVisible;
     if (isSourceVisible) {
       try {
-        const response = await fetch(`/requests/${selectedRequest.id}/source.sol`);
-        if (response.ok) {
-          const sourceCode = await response.text();
-          logs = sourceCode;
-        } else {
-          logs = 'Failed to load source code';
-        }
+        logs = await getRequestSource(selectedRequest.id);
       } catch (e) {
         console.error('Failed to fetch source:', e);
         logs = 'Failed to load source code';

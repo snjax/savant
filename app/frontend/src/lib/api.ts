@@ -50,4 +50,10 @@ export async function getRequestLogs(requestId: string): Promise<string> {
   const response = await fetch(`/api/v1/requests/${requestId}/logs`);
   if (!response.ok) throw new Error('Failed to fetch request logs');
   return response.text();
+}
+
+export async function getRequestSource(requestId: string): Promise<string> {
+  const response = await fetch(`/api/v1/requests/${requestId}/source`);
+  if (!response.ok) throw new Error('Failed to fetch source code');
+  return response.text();
 } 

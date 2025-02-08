@@ -323,6 +323,26 @@ def get_request_logs(request_id: str):
         pass
     return jsonify({'error': 'Request not found'}), 404
 
+@app.route('/api/v1/requests/<request_id>/source')
+@login_required
+def get_request_source(request_id: str):
+    try:
+        request = requests_collection.find_one({'_id': ObjectId(request_id)})
+        if not request:
+            return jsonify({'error': 'Request not found'}), 404
+            
+        # Check if user has access to this request
+        if request['userId'] != current_user.id:
+            return jsonify({'error': 'Unauthorized'}), 403
+            
+        source_file = os.path.join('requests', request_id, 'source.sol')
+        if os.path.exists(source_file):
+            with open(source_file, 'r') as f:
+                return f.read()
+        return jsonify({'error': 'Source file not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     os.makedirs('requests', exist_ok=True)
     start_background_worker()
