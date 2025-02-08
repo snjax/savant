@@ -56,4 +56,23 @@ export async function getRequestSource(requestId: string): Promise<string> {
   const response = await fetch(`/api/v1/requests/${requestId}/source`);
   if (!response.ok) throw new Error('Failed to fetch source code');
   return response.text();
+}
+
+// TODO: Probably easier to just insert a link to the report.
+export async function downloadReport(requestId: string): Promise<void> {
+  const response = await fetch(`/api/v1/requests/${requestId}/report`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to download report');
+  }
+  
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = response.headers.get('content-disposition')?.split('filename=')[1] || 'report.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 } 

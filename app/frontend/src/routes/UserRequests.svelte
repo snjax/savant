@@ -3,7 +3,7 @@
   import { navigate } from 'svelte-routing';
   import { user } from '../lib/auth';
   import type { Request } from '../lib/api';
-  import { getUserRequests, getRequestLogs, getRequestSource } from '../lib/api';
+  import { getUserRequests, getRequestLogs, getRequestSource, downloadReport } from '../lib/api';
 
   export let userId: string;
   
@@ -13,52 +13,57 @@
   let isLoading = true;
   let error: string | null = null;
   let isSourceVisible = false;
+  let isDownloading = false;
 
   $: if (selectedRequest && !isSourceVisible) {
     updateLogs();
   }
 
-  onMount(async () => {
-    if (!$user) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
-    if ($user.id !== userId) {
-      navigate(`/user/${$user.id}`, { replace: true });
-      return;
-    }
-
-    try {
-      requests = await getUserRequests(userId);
-      if (requests.length > 0) {
-        selectedRequest = requests[0];
+  onMount(() => {
+    (async () => {
+      if (!$user) {
+        navigate('/login', { replace: true });
+        return;
       }
-    } catch (e) {
-      error = 'Failed to load requests';
-      console.error(e);
-    } finally {
-      isLoading = false;
-    }
 
-    // Poll for updates every 5 seconds
-    const interval = setInterval(async () => {
+      if ($user.id !== userId) {
+        navigate(`/user/${$user.id}`, { replace: true });
+        return;
+      }
+
       try {
-        const updatedRequests = await getUserRequests(userId);
-        requests = updatedRequests;
-        
-        if (selectedRequest) {
-          const updatedRequest = updatedRequests.find((r: Request) => r.id === selectedRequest.id);
-          if (updatedRequest) {
-            selectedRequest = updatedRequest;
-          }
+        requests = await getUserRequests(userId);
+        if (requests.length > 0) {
+          selectedRequest = requests[0];
         }
       } catch (e) {
-        console.error('Failed to update requests:', e);
+        error = 'Failed to load requests';
+        console.error(e);
+      } finally {
+        isLoading = false;
       }
-    }, 5000);
 
-    return () => clearInterval(interval);
+      // Poll for updates every 5 seconds
+      const interval = setInterval(async () => {
+        try {
+          const updatedRequests = await getUserRequests(userId);
+          requests = updatedRequests;
+          
+          if (selectedRequest) {
+            const updatedRequest = updatedRequests.find(r => r.id === selectedRequest?.id);
+            if (updatedRequest) {
+              selectedRequest = updatedRequest;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to update requests:', e);
+        }
+      }, 5000);
+
+      return () => {
+        clearInterval(interval);
+      };
+    })();
   });
 
   async function updateLogs() {
@@ -84,6 +89,20 @@
       }
     } else {
       updateLogs();
+    }
+  }
+
+  async function handleDownload() {
+    if (!selectedRequest) return;
+    
+    try {
+      isDownloading = true;
+      await downloadReport(selectedRequest.id);
+    } catch (e) {
+      console.error('Failed to download report:', e);
+      error = 'Failed to download report';
+    } finally {
+      isDownloading = false;
     }
   }
 </script>
@@ -138,12 +157,23 @@
         <h2 class="text-xl font-bold text-gray-900">
           Request Details
         </h2>
-        <button
-          class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-500"
-          on:click={toggleSource}
-        >
-          {isSourceVisible ? 'Show Logs' : 'Show Source'}
-        </button>
+        <div class="space-x-4">
+          <button
+            class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-500"
+            on:click={toggleSource}
+          >
+            {isSourceVisible ? 'Show Logs' : 'Show Source'}
+          </button>
+          {#if selectedRequest?.status === 'completed'}
+            <button
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              on:click={handleDownload}
+              disabled={isDownloading}
+            >
+              {isDownloading ? 'Downloading...' : 'Download Report'}
+            </button>
+          {/if}
+        </div>
       </div>
       
       <div class="bg-gray-50 rounded-lg p-4">

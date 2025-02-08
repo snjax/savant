@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any, cast
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, session, send_file
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -340,7 +340,7 @@ def user_requests_handler(user_id: str):
         return jsonify({'error': 'Unauthorized'}), 403
 
     if request.method == 'GET':
-        user_reqs = list(requests_collection.find({'userId': user_id}))
+        user_reqs = list(requests_collection.find({'userId': user_id}).sort('createdAt', -1))
         for req in user_reqs:
             req['id'] = str(req.pop('_id'))
         return jsonify(user_reqs)
@@ -367,10 +367,18 @@ def user_requests_handler(user_id: str):
 
     request_id = str(new_request['_id'])
     request_dir = os.path.join('requests', request_id)
+    logger.info(f"Creating request directory: {os.path.abspath(request_dir)}")
     os.makedirs(request_dir, exist_ok=True)
 
     file_path = os.path.join(request_dir, 'source.sol')
+    logger.info(f"Saving file to: {os.path.abspath(file_path)}")
     file.save(file_path)
+    
+    # Verify file was saved
+    if os.path.exists(file_path):
+        logger.info(f"File saved successfully. Size: {os.path.getsize(file_path)} bytes")
+    else:
+        logger.error("File was not saved successfully")
 
     requests_collection.insert_one(new_request)
     new_request['id'] = request_id
@@ -399,7 +407,7 @@ def get_all_requests():
     if status:
         query['status'] = status
 
-    requests = list(requests_collection.find(query).skip(offset).limit(limit))
+    requests = list(requests_collection.find(query).sort('createdAt', -1).skip(offset).limit(limit))
     for req in requests:
         req['id'] = str(req.pop('_id'))
 
@@ -436,6 +444,29 @@ def get_request_source(request_id: str):
             with open(source_file, 'r') as f:
                 return f.read()
         return jsonify({'error': 'Source file not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/v1/requests/<request_id>/report')
+def get_request_report(request_id: str):
+    try:
+        request = requests_collection.find_one({'_id': ObjectId(request_id)})
+        if not request:
+            return jsonify({'error': 'Request not found'}), 404
+            
+        # Check if user has access to this request
+        if request['userId'] != current_user.id:
+            return jsonify({'error': 'Unauthorized'}), 403
+            
+        report_file = os.path.join('requests', request_id, 'report.pdf')
+        if os.path.exists(report_file):
+            return send_file(
+                report_file,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=f"{request['fileName']}_report.pdf"
+            )
+        return jsonify({'error': 'Report not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
