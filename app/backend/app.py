@@ -14,6 +14,7 @@ import threading
 import time
 import logging
 from werkzeug.datastructures import FileStorage
+import atexit
 
 load_dotenv()
 
@@ -22,55 +23,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev')
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'https://savant.chat'  # type: ignore
-
-_docker_client = None
-
-def get_docker_client():
-    global _docker_client
-    if _docker_client is None:
-        logger.info("Initializing Docker client")
-        # Check common Docker socket locations
-        socket_locations = [
-            '/var/run/docker.sock',  # Linux
-            '~/.docker/run/docker.sock',  # macOS
-            '~/.docker/desktop/docker.sock',  # newer macOS Docker Desktop
-        ]
-        
-        for socket in socket_locations:
-            expanded_socket = os.path.expanduser(socket)
-            logger.debug(f"Checking Docker socket at: {expanded_socket}")
-            if os.path.exists(expanded_socket):
-                try:
-                    logger.info(f"Found Docker socket at: {expanded_socket}")
-                    _docker_client = docker.DockerClient(
-                        base_url=f'unix://{expanded_socket}',
-                        version='auto'
-                    )
-                    # Test the connection
-                    _docker_client.ping()
-                    logger.info("Docker client initialized successfully")
-                    return _docker_client
-                except Exception as e:
-                    logger.error(f"Failed to connect to Docker at {expanded_socket}: {e}")
-                    continue
-                
-        error_msg = "Docker socket not found in any of the expected locations"
-        logger.error(error_msg)
-        raise RuntimeError(error_msg)
-    return _docker_client
-
-# MongoDB setup
-mongo_client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017'))
-db = mongo_client.get_database('savant')
-# TODO: Add indexes
-users_collection = db.get_collection('users')
-requests_collection = db.get_collection('requests')
 
 processing_thread = None
 should_stop = threading.Event()
@@ -192,6 +144,61 @@ def stop_background_worker():
     if processing_thread:
         processing_thread.join(timeout=5)
         logger.info("Background worker thread stopped")
+
+app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev')
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'https://savant.chat'  # type: ignore
+
+# Start background worker when the app is created
+start_background_worker()
+
+# Register cleanup handler
+atexit.register(stop_background_worker)
+
+_docker_client = None
+
+def get_docker_client():
+    global _docker_client
+    if _docker_client is None:
+        logger.info("Initializing Docker client")
+        # Check common Docker socket locations
+        socket_locations = [
+            '/var/run/docker.sock',  # Linux
+            '~/.docker/run/docker.sock',  # macOS
+            '~/.docker/desktop/docker.sock',  # newer macOS Docker Desktop
+        ]
+        
+        for socket in socket_locations:
+            expanded_socket = os.path.expanduser(socket)
+            logger.debug(f"Checking Docker socket at: {expanded_socket}")
+            if os.path.exists(expanded_socket):
+                try:
+                    logger.info(f"Found Docker socket at: {expanded_socket}")
+                    _docker_client = docker.DockerClient(
+                        base_url=f'unix://{expanded_socket}',
+                        version='auto'
+                    )
+                    # Test the connection
+                    _docker_client.ping()
+                    logger.info("Docker client initialized successfully")
+                    return _docker_client
+                except Exception as e:
+                    logger.error(f"Failed to connect to Docker at {expanded_socket}: {e}")
+                    continue
+                
+        error_msg = "Docker socket not found in any of the expected locations"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+    return _docker_client
+
+# MongoDB setup
+mongo_client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017'))
+db = mongo_client.get_database('savant')
+# TODO: Add indexes
+users_collection = db.get_collection('users')
+requests_collection = db.get_collection('requests')
 
 class User(UserMixin):
     def __init__(self, user_id: str, email: str, name: str):
@@ -384,7 +391,6 @@ def get_request_source(request_id: str):
 
 if __name__ == '__main__':
     os.makedirs('requests', exist_ok=True)
-    start_background_worker()
     try:
         app.run(debug=True)
     finally:

@@ -31,5 +31,5 @@ EXPOSE 5000
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=app.py
 
-# CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--threads", "2", "app:app"] 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"] 
+# Use a single worker to ensure only one background worker thread
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "app:app"]
