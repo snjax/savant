@@ -7,6 +7,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 import docker
 from docker.types import Mount
+from docker import errors as docker_errors
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from bson import ObjectId
@@ -48,20 +49,69 @@ def process_request(req: Dict[str, Any]):
         request_dir = os.path.join('requests', req['id'])
         source_file = os.path.join(request_dir, 'source.sol')
         
+        # Add debug logging for paths and file existence
+        abs_request_dir = os.path.abspath(request_dir)
+        abs_source_file = os.path.abspath(source_file)
+        logger.info(f"Local request directory: {abs_request_dir}")
+        logger.info(f"Source file path: {abs_source_file}")
+        logger.info(f"Source file exists: {os.path.exists(abs_source_file)}")
+        if os.path.exists(abs_source_file):
+            logger.info(f"Source file size: {os.path.getsize(abs_source_file)} bytes")
+            logger.info(f"Source file permissions: {oct(os.stat(abs_source_file).st_mode)[-3:]}")
+        
         logger.info(f"Starting Docker container for request {req['id']}")
+        
+        # # Debug: List all volumes
+        # docker_client = get_docker_client()
+        # volumes = docker_client.volumes.list()
+        # logger.info("Available Docker volumes:")
+        # for volume in volumes:
+        #     logger.info(f"  - {volume.name} ({volume.attrs.get('Driver', 'unknown')})")
+        #     logger.info(f"    Mountpoint: {volume.attrs.get('Mountpoint', 'unknown')}")
+        
         # For demo purposes, use a simple container that just copies the file
-        container = get_docker_client().containers.run(
-            'alpine:latest',
-            command='cp /data/source.sol /data/report.pdf',
-            volumes={
-                os.path.abspath(request_dir): {
-                    'bind': '/data',
-                    'mode': 'rw'
-                }
-            },  # type: ignore
-            detach=True,
-            remove=False  # Don't auto-remove so we can get logs
+        mount = Mount(
+            target='/requests',
+            source='app_requests_data',  # Use the Docker Compose volume name
+            type='volume',
+            read_only=False
         )
+        
+        command = '''sh -c "
+            # Verify mount point exists and is accessible
+            if [ ! -d /requests ] || [ ! -w /requests ]; then
+                echo 'ERROR: /requests directory is not mounted or not writable'
+                exit 1
+            fi &&
+            echo 'Mount verification successful' &&
+            echo 'Contents of /requests:' &&
+            ls -la /requests &&
+            echo '\nCreating symlink for /data...' &&
+            rm -rf /data &&
+            ln -s /requests/{} /data &&
+            echo '\nContents of /data:' &&
+            ls -la /data &&
+            echo '\nCopying file...' &&
+            cp /data/source.sol /data/report.pdf
+        "'''.format(req["id"])
+        
+        try:
+            container = get_docker_client().containers.run(
+                'alpine:latest',
+                command=command,
+                mounts=[mount],
+                detach=True,
+            )
+        except docker_errors.APIError as e:
+            logger.error(f"Docker API error while creating container for request {req['id']}: {e}")
+            if "volume not found" in str(e).lower():
+                logger.error(f"Volume 'app-requests_data' not found. Please ensure the volume exists.")
+            elif "mount point" in str(e).lower():
+                logger.error(f"Mount point error. Please check mount configuration.")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error while creating container for request {req['id']}: {e}")
+            raise
 
         try:
             logger.info(f"Waiting for container to complete for request {req['id']}")
