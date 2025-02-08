@@ -170,6 +170,23 @@ def load_user(user_id: str) -> Optional[User]:
         return None
     return User(user_id, user_data['email'], user_data['name'])
 
+@app.route('/api/v1/user/me')
+@login_required
+def get_current_user():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    user_data = users_collection.find_one({'_id': current_user.id})
+    if not user_data:
+        return jsonify({'error': 'User not found'}), 404
+        
+    return jsonify({
+        'id': current_user.id,
+        'email': current_user.email,
+        'name': current_user.name,
+        'picture': user_data.get('picture')
+    })
+
 @app.route('/login', methods=['POST'])
 def login():
     request_json = request.get_json()
@@ -186,23 +203,43 @@ def login():
             requests.Request(),
             os.getenv('GOOGLE_CLIENT_ID')
         )
+        # Note: This implementation uses the Google One Tap sign-in flow.
+        # In this flow, Google returns an ID token that is verified using the client ID,
+        # and no client secret is required. If you intend to use the OAuth 2.0
+        # Authorization Code Flow, you would need to exchange an authorization code
+        # for tokens using both the client ID and client secret.
+        
+        # Verify the token is valid and not expired
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise ValueError('Invalid issuer')
+            
         user_id = idinfo['sub']
+        user_data = {
+            'email': idinfo['email'],
+            'name': idinfo.get('name', 'Unknown'),
+            'picture': idinfo.get('picture'),
+            'last_login': datetime.now(timezone.utc)
+        }
+        
         users_collection.update_one(
             {'_id': user_id},
-            {
-                '$set': {
-                    'email': idinfo['email'],
-                    'name': idinfo.get('name', 'Unknown'),
-                    'last_login': datetime.now(timezone.utc)
-                }
-            },
+            {'$set': user_data},
             upsert=True
         )
-        user = User(user_id, idinfo['email'], idinfo.get('name', 'Unknown'))
+        
+        user = User(user_id, user_data['email'], user_data['name'])
         login_user(user)
-        return jsonify({'success': True})
-    except ValueError:
-        return jsonify({'error': 'Invalid token'}), 401
+        
+        return jsonify({
+            'id': user_id,
+            'email': user_data['email'],
+            'name': user_data['name'],
+            'picture': user_data.get('picture')
+        })
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 401
+    except Exception as e:
+        return jsonify({'error': 'Authentication failed'}), 401
 
 @app.route('/logout')
 @login_required
