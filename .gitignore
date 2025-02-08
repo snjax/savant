@@ -2,3 +2,4 @@
 .pytest_cache
 .vscode
 node_modules
+savant-agent

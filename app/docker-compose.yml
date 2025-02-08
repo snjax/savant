@@ -6,10 +6,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # - frontend:/usr/share/nginx/html
+      # - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - certbot_etc:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
     networks:
       - app_network
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   certbot:
     image: certbot/certbot:latest
@@ -19,25 +26,25 @@ services:
       - certbot_var:/var/lib/letsencrypt
       - certbot_www:/var/www/certbot
     depends_on:
-      - nginx
+      - frontend
     command: certonly --webroot --webroot-path=/var/www/certbot --email admin@savant.chat --agree-tos --no-eff-email -d savant.chat
 
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./frontend/dist:/usr/share/nginx/html
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
-      - certbot_etc:/etc/letsencrypt
-      - certbot_www:/var/www/certbot
-    depends_on:
-      - frontend
-    networks:
-      - app_network
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+  # nginx:
+  #   image: nginx:alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - frontend:/usr/share/nginx/html
+  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf
+  #     - certbot_etc:/etc/letsencrypt
+  #     - certbot_www:/var/www/certbot
+  #   depends_on:
+  #     - frontend
+  #   networks:
+  #     - app_network
+  #   command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   backend:
     build:
@@ -84,3 +91,4 @@ volumes:
   certbot_etc:
   certbot_var:
   certbot_www:
+  frontend:
