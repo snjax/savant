@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Router, Link, Route } from "svelte-routing";
   import { onMount } from "svelte";
-  import { user, initializeAuth } from "./lib/auth";
+  import { user, initializeAuth, logout } from "./lib/auth";
   import Login from "./routes/Login.svelte";
   import LiveFeed from "./routes/LiveFeed.svelte";
   import UserRequests from "./routes/UserRequests.svelte";
@@ -16,8 +16,7 @@
 
   async function handleLogout() {
     try {
-      await fetch("/logout");
-      window.location.href = "/login";
+      await logout();
     } catch (error) {
       console.error("Logout failed:", error);
     }

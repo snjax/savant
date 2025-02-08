@@ -20,7 +20,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev')
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'  # type: ignore
+login_manager.login_view = 'https://savant.chat'  # type: ignore
 
 _docker_client = None
 
@@ -89,10 +89,8 @@ def process_request(req: Dict[str, Any]):
         )
 
         try:
-            # Wait for container to finish first
             result = container.wait()
             
-            # Then get logs
             logs = container.logs()
             with open(os.path.join(request_dir, 'output.log'), 'wb') as f:
                 f.write(logs)
@@ -104,7 +102,6 @@ def process_request(req: Dict[str, Any]):
                 upsert=True
             )
         finally:
-            # Always try to remove the container
             try:
                 container.remove(force=True)
             except:
@@ -171,7 +168,6 @@ def load_user(user_id: str) -> Optional[User]:
     return User(user_id, user_data['email'], user_data['name'])
 
 @app.route('/api/v1/user/me')
-@login_required
 def get_current_user():
     if not current_user.is_authenticated:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -187,7 +183,7 @@ def get_current_user():
         'picture': user_data.get('picture')
     })
 
-@app.route('/login', methods=['POST'])
+@app.route('/api/v1/auth/login', methods=['POST'])
 def login():
     request_json = request.get_json()
     if not request_json:
@@ -203,13 +199,7 @@ def login():
             requests.Request(),
             os.getenv('GOOGLE_CLIENT_ID')
         )
-        # Note: This implementation uses the Google One Tap sign-in flow.
-        # In this flow, Google returns an ID token that is verified using the client ID,
-        # and no client secret is required. If you intend to use the OAuth 2.0
-        # Authorization Code Flow, you would need to exchange an authorization code
-        # for tokens using both the client ID and client secret.
         
-        # Verify the token is valid and not expired
         if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
             raise ValueError('Invalid issuer')
             
@@ -241,7 +231,7 @@ def login():
     except Exception as e:
         return jsonify({'error': 'Authentication failed'}), 401
 
-@app.route('/logout')
+@app.route('/api/v1/auth/logout')
 @login_required
 def logout():
     logout_user()
@@ -293,7 +283,6 @@ def user_requests_handler(user_id: str):
     return jsonify(new_request)
 
 @app.route('/api/v1/requests/<request_id>')
-@login_required
 def get_request(request_id: str):
     try:
         req = requests_collection.find_one({'_id': ObjectId(request_id)})
@@ -305,9 +294,8 @@ def get_request(request_id: str):
     return jsonify({'error': 'Request not found'}), 404
 
 @app.route('/api/v1/requests')
-@login_required
 def get_all_requests():
-    limit = int(request.args.get('limit', 50))
+    limit = min(int(request.args.get('limit', 50)), 100)
     offset = int(request.args.get('offset', 0))
     status = request.args.get('status')
 
@@ -321,8 +309,8 @@ def get_all_requests():
 
     return jsonify(requests)
 
+# TODO: Do we need to show logs to anyone?
 @app.route('/api/v1/requests/<request_id>/logs')
-@login_required
 def get_request_logs(request_id: str):
     try:
         if requests_collection.find_one({'_id': ObjectId(request_id)}):

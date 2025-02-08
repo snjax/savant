@@ -5,6 +5,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
     restart: unless-stopped
     ports:
       - "80:80"
@@ -67,11 +69,6 @@ services:
       - mongodb
     networks:
       - app_network
-
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
 
   mongodb:
     image: mongo:latest

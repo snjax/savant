@@ -82,7 +82,6 @@ function waitForGoogleLoad(): Promise<void> {
 
 export async function initializeAuth() {
   try {
-    // First check if user is already logged in
     const response = await fetch('/api/v1/user/me');
     if (response.ok) {
       const userData = await response.json();
@@ -91,10 +90,8 @@ export async function initializeAuth() {
       return;
     }
 
-    // Wait for Google script to load
     await waitForGoogleLoad();
 
-    // If not logged in, initialize Google OAuth
     window.google.accounts.id.initialize({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse,
@@ -112,7 +109,7 @@ export async function initializeAuth() {
 
 async function handleCredentialResponse(response: GoogleCredentialResponse) {
   try {
-    const res = await fetch('/login', {
+    const res = await fetch('/api/v1/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -135,7 +132,7 @@ async function handleCredentialResponse(response: GoogleCredentialResponse) {
 
 export async function logout() {
   try {
-    const response = await fetch('/logout');
+    const response = await fetch('/api/v1/auth/logout');
     if (!response.ok) {
       throw new Error('Logout failed');
     }
