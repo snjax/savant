@@ -22,7 +22,7 @@
 
     loadInitialRequest().then(() => {
       // Only set up polling if the request is not completed
-      if (request?.status !== 'completed') {
+      if (request?.status !== 'completed' && request?.status !== 'failed') {
         interval = setInterval(updateRequest, 5000);
       }
     });
@@ -57,8 +57,6 @@
   }
 
   async function updateRequest() {
-    if (!request || request.status === 'completed') return;
-
     try {
       const newRequest = await getRequest(requestId);
       if (!newRequest) {

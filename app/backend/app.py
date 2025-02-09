@@ -29,6 +29,17 @@ processing_thread = None
 should_stop = threading.Event()
 processing_lock = threading.Lock()
 
+def stream_container_logs(container, log_file_path: str):
+    """Stream container logs to a file in real-time"""
+    try:
+        with open(log_file_path, 'wb') as f:
+            # Stream and write logs in chunks
+            for chunk in container.logs(stream=True, follow=True):
+                f.write(chunk)
+                f.flush()  # Ensure logs are written immediately
+    except Exception as e:
+        logger.error(f"Error streaming container logs: {e}")
+
 def process_request(req: Dict[str, Any]):
     """Process a request using Docker"""
     logger.info(f"Starting to process request {req['id']}")
@@ -61,15 +72,6 @@ def process_request(req: Dict[str, Any]):
         
         logger.info(f"Starting Docker container for request {req['id']}")
         
-        # # Debug: List all volumes
-        # docker_client = get_docker_client()
-        # volumes = docker_client.volumes.list()
-        # logger.info("Available Docker volumes:")
-        # for volume in volumes:
-        #     logger.info(f"  - {volume.name} ({volume.attrs.get('Driver', 'unknown')})")
-        #     logger.info(f"    Mountpoint: {volume.attrs.get('Mountpoint', 'unknown')}")
-        
-        # For demo purposes, use a simple container that just copies the file
         mount = Mount(
             target='/requests',
             source='app_requests_data',  # Use the Docker Compose volume name
@@ -77,23 +79,29 @@ def process_request(req: Dict[str, Any]):
             read_only=False
         )
         
-        command = '''sh -c "
+        command = '''sh -c '
             # Verify mount point exists and is accessible
             if [ ! -d /requests ] || [ ! -w /requests ]; then
-                echo 'ERROR: /requests directory is not mounted or not writable'
+                echo "ERROR: /requests directory is not mounted or not writable"
                 exit 1
             fi &&
-            echo 'Mount verification successful' &&
-            echo 'Contents of /requests:' &&
+            echo "Mount verification successful" &&
+            echo "Contents of /requests:" &&
             ls -la /requests &&
-            echo '\nCreating symlink for /data...' &&
+            echo "\\nCreating symlink for /data..." &&
             rm -rf /data &&
             ln -s /requests/{} /data &&
-            echo '\nContents of /data:' &&
+            echo "\\nContents of /data:" &&
             ls -la /data &&
-            echo '\nCopying file...' &&
+            echo "\\nStarting echo loop..." &&
+            for i in $(seq 1 20)
+            do
+                echo "Echo $i"
+                sleep 1
+            done &&
+            echo "\\nCopying file..." &&
             cp /data/source.sol /data/report.pdf
-        "'''.format(req["id"])
+        ' '''.format(req["id"])
         
         try:
             container = get_docker_client().containers.run(
@@ -104,24 +112,19 @@ def process_request(req: Dict[str, Any]):
             )
         except docker_errors.APIError as e:
             logger.error(f"Docker API error while creating container for request {req['id']}: {e}")
-            if "volume not found" in str(e).lower():
-                logger.error(f"Volume 'app-requests_data' not found. Please ensure the volume exists.")
-            elif "mount point" in str(e).lower():
-                logger.error(f"Mount point error. Please check mount configuration.")
-            raise
         except Exception as e:
             logger.error(f"Unexpected error while creating container for request {req['id']}: {e}")
             raise
 
         try:
             logger.info(f"Waiting for container to complete for request {req['id']}")
+            
+            # Stream logs in real-time
+            log_file = os.path.join(request_dir, 'output.log')
+            stream_container_logs(container, log_file)
+            
+            # Get the final result
             result = container.wait()
-            
-            logs = container.logs()
-            logger.info(f"Container logs for request {req['id']}: {logs.decode('utf-8')}")
-            
-            with open(os.path.join(request_dir, 'output.log'), 'wb') as f:
-                f.write(logs)
             
             new_status = 'completed' if result['StatusCode'] == 0 else 'failed'
             logger.info(f"Request {req['id']} completed with status {new_status}")
