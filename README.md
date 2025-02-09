@@ -3,6 +3,8 @@ Smart Contract auditing agent for Agentic Ethereum Hackathon
 
 > ⚠️ **Important Notice**: This repository contains limited version of the final product. We are currently withholding the full version due to its exceptional effectiveness at discovering critical vulnerabilities in smart contracts. The full version will be published after careful consideration of responsible disclosure practices.
 
+Live demo is available at [savant.chat](https://savant.chat/)
+
 ## Bug finding example 🐛
 
 ![Bug finding example](assets/2025-02-08_02-17.png)
