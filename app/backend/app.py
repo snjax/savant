@@ -400,7 +400,7 @@ def requests_handler():
     request_id = str(new_request['_id'])
     request_dir = os.path.join('requests', request_id)
     logger.info(f"Creating request directory: {os.path.abspath(request_dir)}")
-    os.makedirs(request_dir, exist_ok=True)
+    os.makedirs(request_dir, exist_ok=True, mode=0o777)
 
     file_path = os.path.join(request_dir, 'source.sol')
     logger.info(f"Saving file to: {os.path.abspath(file_path)}")

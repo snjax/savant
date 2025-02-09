@@ -108,7 +108,7 @@
       if (selectedRequest) {
         // Find the updated version of the selected request
         const updatedRequest = updatedRequests.find(r => r.id === selectedRequest!.id);
-        if (updatedRequest && updatedRequest.status !== 'completed') {
+        if (updatedRequest) {
           try {
             logs = await getRequestLogs(updatedRequest.id);
           } catch (e) {
