@@ -88,33 +88,28 @@ def process_request(req: Dict[str, Any]):
             echo "Mount verification successful" &&
             echo "Contents of /requests:" &&
             ls -la /requests &&
-            echo "\\nCreating symlink for /data..." &&
+            echo "\nCreating symlink for /data..." &&
             rm -rf /data &&
             ln -s /requests/{} /data &&
-            echo "\\nContents of /data:" &&
+            echo "\nContents of /data:" &&
             ls -la /data &&
-            echo "\\nStarting echo loop..." &&
+            echo "\nStarting echo loop..." &&
             for i in $(seq 1 20)
             do
                 echo "Echo $i"
                 sleep 1
             done &&
-            echo "\\nCopying file..." &&
+            echo "\nCopying file..." &&
             cp /data/source.sol /data/report.pdf
         ' '''.format(req["id"])
         
-        try:
-            container = get_docker_client().containers.run(
-                'alpine:latest',
-                command=command,
-                mounts=[mount],
-                detach=True,
-            )
-        except docker_errors.APIError as e:
-            logger.error(f"Docker API error while creating container for request {req['id']}: {e}")
-        except Exception as e:
-            logger.error(f"Unexpected error while creating container for request {req['id']}: {e}")
-            raise
+        container = get_docker_client().containers.run(
+            'alpine:latest',
+            command=command,
+            mounts=[mount],
+            detach=True,
+        )
+
 
         try:
             logger.info(f"Waiting for container to complete for request {req['id']}")
