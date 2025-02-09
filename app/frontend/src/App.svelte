@@ -74,8 +74,8 @@
               {/if}
             </div>
           </div>
-          {#if $user}
-            <div class="flex items-center">
+          <div class="flex items-center">
+            {#if $user}
               <div class="relative">
                 <button
                   on:click={() => isMenuOpen = !isMenuOpen}
@@ -113,8 +113,15 @@
                   </div>
                 {/if}
               </div>
-            </div>
-          {/if}
+            {:else}
+              <Link
+                to="/login"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Sign In
+              </Link>
+            {/if}
+          </div>
         </div>
       </div>
     </nav>

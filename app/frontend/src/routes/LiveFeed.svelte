@@ -23,11 +23,6 @@
   }
 
   onMount(() => {
-    if (!$user) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
     loadRequests();
     checkMobileView();
 
@@ -106,9 +101,14 @@
   }
 
   async function handleFileUpload(event: Event) {
+    if (!$user) {
+      navigate('/login');
+      return;
+    }
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file || !$user) return;
+    if (!file) return;
 
     try {
       const newRequest = await createRequest($user.id, file);
@@ -129,19 +129,28 @@
         bind:value={selectedStatus}
         onChange={(value) => selectedStatus = value}
       />
-      <label
-        for="file-upload"
-        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-      >
-        New Request
-      </label>
-      <input
-        id="file-upload"
-        type="file"
-        accept=".sol"
-        class="hidden"
-        on:change={handleFileUpload}
-      />
+      {#if $user}
+        <label
+          for="file-upload"
+          class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          New Request
+        </label>
+        <input
+          id="file-upload"
+          type="file"
+          accept=".sol"
+          class="hidden"
+          on:change={handleFileUpload}
+        />
+      {:else}
+        <Link
+          to="/login"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          New Request
+        </Link>
+      {/if}
     </div>
   </div>
 

@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navigate } from 'svelte-routing';
-  import { user } from '../lib/auth';
   import type { Request } from '../lib/api';
   import { getRequest, getRequestLogs } from '../lib/api';
   import RequestDetails from '../lib/components/RequestDetails.svelte';
@@ -15,11 +13,6 @@
   let interval: number;
 
   onMount(() => {
-    if (!$user) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
     loadInitialRequest().then(() => {
       // Only set up polling if the request is not completed
       if (request?.status !== 'completed' && request?.status !== 'failed') {
