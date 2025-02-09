@@ -354,6 +354,14 @@ def logout():
     logout_user()
     return jsonify({'success': True})
 
+def check_user_request_limit(user_id: str) -> bool:
+    active_requests = requests_collection.count_documents({
+        'userId': user_id,
+        'status': {'$in': ['pending', 'processing', 'completed']}
+    })
+
+    return active_requests < MAX_REQUESTS_PER_USER
+
 @app.route('/api/v1/requests', methods=['GET', 'PUT'])
 def requests_handler():
     if request.method == 'GET':
@@ -377,6 +385,9 @@ def requests_handler():
     # PUT request - create new request
     if not current_user.is_authenticated:
         return jsonify({'error': 'Not authenticated'}), 401
+
+    if not check_user_request_limit(current_user.id):
+        return jsonify({'error': f'Request limit reached. Maximum {MAX_REQUESTS_PER_USER} requests allowed per user.'}), 429
 
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
