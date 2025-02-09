@@ -8,6 +8,8 @@
 
   let isModalOpen = false;
   let fileInput: HTMLInputElement;
+  let isUploading = false;
+  let errorMessage: string | null = null;
 
   const disclaimer = `This AI code audit tool is a hackathon project for educational purposes only. All submitted code and reports are publicly accessible. The automated analysis may not detect all issues and should not replace human review. Provided "as is" without warranties. We are not liable for any damages from tool usage. Do not upload sensitive code.`;
 
@@ -17,10 +19,12 @@
       return;
     }
     isModalOpen = true;
+    errorMessage = null;
   }
 
   function closeModal() {
     isModalOpen = false;
+    errorMessage = null;
   }
 
   async function handleFileUpload(event: Event) {
@@ -28,23 +32,38 @@
     const file = input.files?.[0];
     if (!file || !$user) return;
 
+    // Validate file type
+    if (!file.name.endsWith('.sol')) {
+      errorMessage = 'Please upload a Solidity (.sol) file';
+      input.value = '';
+      return;
+    }
+
     try {
+      isUploading = true;
+      errorMessage = null;
       const newRequest = await createRequest($user.id, file);
       onRequestCreated(newRequest);
       closeModal();
       input.value = '';
     } catch (e) {
       console.error('Failed to create request:', e);
-      alert('Failed to upload file');
+      errorMessage = e instanceof Error ? e.message : 'Failed to upload file. Please try again.';
+    } finally {
+      isUploading = false;
     }
   }
 </script>
 
 <button
-  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
   on:click={openModal}
+  disabled={($user?.remainingRequests ?? 0) <= 0}
 >
-  New Request
+  <span>New Request</span>
+  {#if $user}
+    <span class="text-sm opacity-75">({Math.max(0, $user.remainingRequests)}/{$user.maxRequests})</span>
+  {/if}
 </button>
 
 <Modal
@@ -53,23 +72,43 @@
   title="New Code Analysis Request"
 >
   <div class="space-y-6">
-    <div class="text-gray-700 bg-gray-50 p-4 rounded-lg text-sm">
-      {disclaimer}
-    </div>
+    {#if ($user?.remainingRequests ?? 0) <= 0}
+      <div class="text-red-600 bg-red-50 p-4 rounded-lg text-sm">
+        You have reached the maximum number of active requests ({$user?.maxRequests}). Please wait for some of your existing requests to complete before creating new ones.
+      </div>
+    {:else}
+      <div class="text-gray-700 bg-gray-50 p-4 rounded-lg text-sm">
+        {disclaimer}
+      </div>
+    {/if}
+
+    {#if errorMessage}
+      <div class="text-red-600 bg-red-50 p-4 rounded-lg text-sm">
+        {errorMessage}
+      </div>
+    {/if}
 
     <div class="flex justify-end space-x-4">
       <button
         class="text-gray-600 hover:text-gray-800"
         on:click={closeModal}
+        disabled={isUploading}
       >
         Cancel
       </button>
       
       <label
         for="file-upload-modal"
-        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        class:opacity-50={isUploading}
+        class:cursor-not-allowed={isUploading}
       >
-        Upload Solidity File
+        {#if isUploading}
+          <div class="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+          <span>Uploading...</span>
+        {:else}
+          <span>Upload Solidity File</span>
+        {/if}
       </label>
       <input
         bind:this={fileInput}
@@ -78,6 +117,7 @@
         accept=".sol"
         class="hidden"
         on:change={handleFileUpload}
+        disabled={isUploading}
       />
     </div>
   </div>

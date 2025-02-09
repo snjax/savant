@@ -12,7 +12,7 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center [&:not(:first-child)]:!ml-0 z-[9999]"
     on:click={handleBackdropClick}
   >
     <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 relative">

@@ -132,5 +132,12 @@
       <Route path="/user/:userId" component={UserRequests} />
       <Route path="/request/:requestId" component={RequestDetailsPage} />
     </main>
+
+    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-auto">
+      <p class="text-center text-gray-600">
+        Want to work together or have questions? Feel free to reach out to 
+        <a href="https://t.me/AlexandraGulamova" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Alexandra Gulamova</a>
+      </p>
+    </footer>
   </Router>
 {/if} 
