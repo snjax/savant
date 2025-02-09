@@ -2,9 +2,12 @@ import { writable } from 'svelte/store';
 
 export interface User {
   id: string;
-  name: string;
   email: string;
+  name: string;
   picture?: string;
+  activeRequests: number;
+  maxRequests: number;
+  remainingRequests: number;
 }
 
 export const user = writable<User | null>(null);

@@ -317,11 +317,19 @@ def get_current_user():
     if not user_data:
         return jsonify({'error': 'User not found'}), 404
         
+    active_requests = requests_collection.count_documents({
+        'userId': current_user.id,
+        'status': {'$in': ['pending', 'processing', 'completed']}
+    })
+        
     return jsonify({
         'id': current_user.id,
         'email': current_user.email,
         'name': current_user.name,
-        'picture': user_data.get('picture')
+        'picture': user_data.get('picture'),
+        'activeRequests': active_requests,
+        'maxRequests': MAX_REQUESTS_PER_USER,
+        'remainingRequests': max(0, MAX_REQUESTS_PER_USER - active_requests)
     })
 
 @app.route('/api/v1/auth/login', methods=['POST'])

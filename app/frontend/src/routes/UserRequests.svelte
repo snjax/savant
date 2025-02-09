@@ -6,6 +6,7 @@
   import { getAllRequests, getRequestLogs, createRequest } from '../lib/api';
   import StatusDropdown from '../lib/components/StatusDropdown.svelte';
   import RequestDetails from '../lib/components/RequestDetails.svelte';
+  import NewRequestButton from '../lib/components/NewRequestButton.svelte';
 
   export let userId: string;
   
@@ -171,18 +172,11 @@
           bind:value={selectedStatus}
           onChange={(value) => selectedStatus = value}
         />
-        <label
-          for="file-upload"
-          class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-        >
-          New Request
-        </label>
-        <input
-          id="file-upload"
-          type="file"
-          accept=".sol"
-          class="hidden"
-          on:change={handleFileUpload}
+        <NewRequestButton
+          onRequestCreated={(newRequest) => {
+            requests = [newRequest, ...requests];
+            selectRequest(newRequest);
+          }}
         />
       </div>
     </div>
