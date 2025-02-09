@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Request } from '../api';
   import { getRequestLogs, getRequestSource, downloadReport } from '../api';
+  import { afterUpdate } from 'svelte';
 
   export let request: Request;
   export let logs: string = '';
@@ -10,6 +11,13 @@
   let error: string | null = null;
   let isSourceVisible = false;
   let isDownloading = false;
+  let logsContainer: HTMLDivElement;
+
+  afterUpdate(() => {
+    if (logsContainer) {
+      logsContainer.scrollTop = logsContainer.scrollHeight;
+    }
+  });
 
   $: {
     // Reset source visibility when request changes
@@ -116,7 +124,10 @@
       <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   {:else}
-    <div class="bg-gray-900 rounded-xl p-3 sm:p-6 h-[24rem] sm:h-[32rem] overflow-auto border border-gray-800 shadow-inner">
+    <div 
+      bind:this={logsContainer}
+      class="bg-gray-900 rounded-xl p-3 sm:p-6 h-[24rem] sm:h-[32rem] overflow-auto border border-gray-800 shadow-inner"
+    >
       <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap leading-relaxed">{logs}</pre>
     </div>
   {/if}
