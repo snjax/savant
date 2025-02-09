@@ -25,6 +25,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# MongoDB setup
+mongo_client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017'))
+db = mongo_client.get_database('savant')
+
+users_collection = db.get_collection('users')
+requests_collection = db.get_collection('requests')
+
+requests_collection.create_index([('status', 1), ('createdAt', 1)])
+requests_collection.create_index([('userId', 1), ('createdAt', -1)])
+requests_collection.create_index([('userId', 1), ('status', 1), ('createdAt', -1)])
+requests_collection.create_index([('status', 1), ('createdAt', -1)])
+requests_collection.create_index([('createdAt', -1)])
+
 processing_thread = None
 should_stop = threading.Event()
 processing_lock = threading.Lock()
@@ -73,43 +86,54 @@ def process_request(req: Dict[str, Any]):
         logger.info(f"Starting Docker container for request {req['id']}")
         
         mount = Mount(
-            target='/requests',
+            target='/data',
             source='app_requests_data',  # Use the Docker Compose volume name
             type='volume',
             read_only=False
         )
         
-        command = '''sh -c '
-            # Verify mount point exists and is accessible
-            if [ ! -d /requests ] || [ ! -w /requests ]; then
-                echo "ERROR: /requests directory is not mounted or not writable"
-                exit 1
-            fi &&
-            echo "Mount verification successful" &&
-            echo "Contents of /requests:" &&
-            ls -la /requests &&
-            echo "\nCreating symlink for /data..." &&
-            rm -rf /data &&
-            ln -s /requests/{} /data &&
-            echo "\nContents of /data:" &&
-            ls -la /data &&
-            echo "\nStarting echo loop..." &&
-            for i in $(seq 1 20)
-            do
-                echo "Echo $i"
-                sleep 1
-            done &&
-            echo "\nCopying file..." &&
-            cp /data/source.sol /data/report.pdf
-        ' '''.format(req["id"])
         
-        container = get_docker_client().containers.run(
-            'alpine:latest',
-            command=command,
-            mounts=[mount],
-            detach=True,
-        )
+        agent_container = os.getenv('AGENT_CONTAINER')
+        ai_api_key = os.getenv('AI_API_KEY')
 
+        if not agent_container or not ai_api_key:
+            logger.info("Using dummy container")
+            # This is random nonsense to pad the logs
+            command = '''sh -c '
+                for i in $(seq 1 20)
+                do
+                    echo "Echo $i"
+                    sleep 1
+                done
+            ' '''.format(req["id"])
+            
+            container = get_docker_client().containers.run(
+                'alpine:latest',
+                command=command,
+                mounts=[mount],
+                detach=True,
+            )
+        else:
+            logger.info(f"Using agent container {agent_container}")
+            environment = {
+                'AI_API_KEY': ai_api_key,
+                'AI_MODEL': 'deepseek/deepseek-r1',
+                'AI_MODEL2': 'openai/o3-mini',
+                'AI_BASE_URL': 'https://openrouter.ai/api/v1',
+            }
+            
+            command = f'''sh -c '
+                uv run src/main.py /data/{req['id']}/source.sol --output /data/{req['id']}/report.pdf
+            ' '''
+            logger.info(f"Using command: {command}")
+
+            container = get_docker_client().containers.run(
+                agent_container,
+                command=command,
+                mounts=[mount],
+                environment=environment,
+                detach=True,
+            )
 
         try:
             logger.info(f"Waiting for container to complete for request {req['id']}")
@@ -153,7 +177,7 @@ def background_worker():
         try:
             # Check for pending requests in the database
             pending_request = requests_collection.find_one(
-                {'status': 'pending'},
+                {'status': {'$in': ['pending', 'processing']}}, # FIXME: Remove failed
                 sort=[('createdAt', 1)]  # Process oldest first
             )
 
@@ -240,19 +264,6 @@ def get_docker_client():
         logger.error(error_msg)
         raise RuntimeError(error_msg)
     return _docker_client
-
-# MongoDB setup
-mongo_client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017'))
-db = mongo_client.get_database('savant')
-
-users_collection = db.get_collection('users')
-requests_collection = db.get_collection('requests')
-
-requests_collection.create_index([('status', 1), ('createdAt', 1)])
-requests_collection.create_index([('userId', 1), ('createdAt', -1)])
-requests_collection.create_index([('userId', 1), ('status', 1), ('createdAt', -1)])
-requests_collection.create_index([('status', 1), ('createdAt', -1)])
-requests_collection.create_index([('createdAt', -1)])
 
 class User(UserMixin):
     def __init__(self, user_id: str, email: str, name: str):
@@ -371,6 +382,12 @@ def requests_handler():
     filename = file.filename
     if not filename or not filename.endswith('.sol'):
         return jsonify({'error': 'Invalid file type'}), 400
+
+    # Read and check file content length
+    file_content = file.read().decode('utf-8')
+    if len(file_content) > 60 * 50:
+        return jsonify({'error': 'File is too large. Maximum size is 3000 characters.'}), 400
+    file.seek(0)
 
     new_request = {
         '_id': ObjectId(),

@@ -32,4 +32,4 @@ ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=app.py
 
 # Use a single worker to ensure only one background worker thread
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "app:app"]
+CMD chmod -R 777 /app/requests && gunicorn --bind 0.0.0.0:5000 --workers 1 app:app

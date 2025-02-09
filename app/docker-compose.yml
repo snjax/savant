@@ -60,6 +60,8 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - MONGODB_URI=mongodb://mongodb:27017
       - DOCKER_HOST=unix:///var/run/docker.sock
+      - AGENT_CONTAINER=savant-agent:latest
+      - AI_API_KEY=${AI_API_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - requests_data:/app/requests
