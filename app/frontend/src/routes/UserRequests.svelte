@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { navigate } from 'svelte-routing';
+  import { navigate, Link } from 'svelte-routing';
   import { user } from '../lib/auth';
   import type { Request, RequestStatus } from '../lib/api';
   import { getUserRequests, getRequestLogs, createRequest } from '../lib/api';
@@ -149,11 +149,11 @@
     {:else}
       <div class="space-y-4">
         {#each requests as request}
-          <button 
-            class="block w-full text-left"
-            on:click={() => selectRequest(request)}
-          >
-            <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition-shadow" class:ring-2={selectedRequest?.id === request.id} class:ring-blue-500={selectedRequest?.id === request.id}>
+          <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition-shadow relative" class:ring-2={selectedRequest?.id === request.id} class:ring-blue-500={selectedRequest?.id === request.id}>
+            <button 
+              class="block w-full text-left"
+              on:click={() => selectRequest(request)}
+            >
               <h3 class="font-medium text-gray-900">{request.fileName}</h3>
               <p class="text-sm text-gray-500">
                 Created {new Date(request.createdAt).toLocaleString()}
@@ -171,8 +171,18 @@
               >
                 {request.status}
               </span>
-            </div>
-          </button>
+            </button>
+            <Link
+              to={`/request/${request.id}`}
+              class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+              title="Open request details"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+              </svg>
+            </Link>
+          </div>
         {/each}
       </div>
     {/if}
