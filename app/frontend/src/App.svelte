@@ -1,13 +1,15 @@
 <script lang="ts">
-  import { Router, Link, Route } from "svelte-routing";
+  import { Router, Link, Route, useLocation } from "svelte-routing";
   import { onMount } from "svelte";
   import { user, initializeAuth, logout } from "./lib/auth";
   import Login from "./routes/Login.svelte";
   import LiveFeed from "./routes/LiveFeed.svelte";
   import UserRequests from "./routes/UserRequests.svelte";
+  import RequestDetailsPage from "./routes/RequestDetailsPage.svelte";
 
   let initialized = false;
   let isMenuOpen = false;
+  const location = useLocation();
 
   onMount(async () => {
     await initializeAuth();
@@ -21,6 +23,9 @@
       console.error("Logout failed:", error);
     }
   }
+
+  $: isHome = $location?.pathname === "/";
+  $: isUserRequests = $user && $location?.pathname === `/user/${$user.id}`;
 </script>
 
 {#if !initialized}
@@ -36,6 +41,22 @@
             <Link to="/" class="flex-shrink-0 flex items-center">
               <h1 class="text-xl font-bold text-gray-900">Savant</h1>
             </Link>
+            <div class="ml-6 flex space-x-4">
+              <Link
+                to="/"
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium {isHome ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
+              >
+                All Requests
+              </Link>
+              {#if $user}
+                <Link
+                  to={`/user/${$user.id}`}
+                  class="inline-flex items-center px-1 pt-1 text-sm font-medium {isUserRequests ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
+                >
+                  My Requests
+                </Link>
+              {/if}
+            </div>
           </div>
           {#if $user}
             <div class="flex items-center">
@@ -52,7 +73,7 @@
                 </button>
                 {#if isMenuOpen}
                   <div
-                    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5"
+                    class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50"
                     role="menu"
                   >
                     <Link
@@ -83,6 +104,7 @@
       <Route path="/login" component={Login} />
       <Route path="/" component={LiveFeed} />
       <Route path="/user/:userId" component={UserRequests} />
+      <Route path="/request/:requestId" component={RequestDetailsPage} />
     </main>
   </Router>
 {/if} 
