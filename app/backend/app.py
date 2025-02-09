@@ -246,9 +246,15 @@ def get_docker_client():
 # MongoDB setup
 mongo_client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017'))
 db = mongo_client.get_database('savant')
-# TODO: Add indexes
+
 users_collection = db.get_collection('users')
 requests_collection = db.get_collection('requests')
+
+requests_collection.create_index([('status', 1), ('createdAt', 1)])
+requests_collection.create_index([('userId', 1), ('createdAt', -1)])
+requests_collection.create_index([('userId', 1), ('status', 1), ('createdAt', -1)])
+requests_collection.create_index([('status', 1), ('createdAt', -1)])
+requests_collection.create_index([('createdAt', -1)])
 
 class User(UserMixin):
     def __init__(self, user_id: str, email: str, name: str):
@@ -333,19 +339,30 @@ def logout():
     logout_user()
     return jsonify({'success': True})
 
-@app.route('/api/v1/user/<user_id>/requests', methods=['GET', 'PUT'])
-@login_required
-def user_requests_handler(user_id: str):
-    if current_user.id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
-
+@app.route('/api/v1/requests', methods=['GET', 'PUT'])
+def requests_handler():
     if request.method == 'GET':
-        user_reqs = list(requests_collection.find({'userId': user_id}).sort('createdAt', -1))
-        for req in user_reqs:
+        limit = min(int(request.args.get('limit', 50)), 100)
+        offset = int(request.args.get('offset', 0))
+        status = request.args.get('status')
+        user_id = request.args.get('user_id')
+
+        query = {}
+        if status:
+            query['status'] = status
+        if user_id:
+            query['userId'] = user_id
+
+        requests = list(requests_collection.find(query).sort('createdAt', -1).skip(offset).limit(limit))
+        for req in requests:
             req['id'] = str(req.pop('_id'))
-        return jsonify(user_reqs)
+
+        return jsonify(requests)
 
     # PUT request - create new request
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Not authenticated'}), 401
+
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
 
@@ -359,7 +376,7 @@ def user_requests_handler(user_id: str):
 
     new_request = {
         '_id': ObjectId(),
-        'userId': user_id,
+        'userId': current_user.id,
         'status': 'pending',
         'createdAt': datetime.now(timezone.utc),
         'fileName': filename
@@ -397,23 +414,6 @@ def get_request(request_id: str):
         pass
     return jsonify({'error': 'Request not found'}), 404
 
-@app.route('/api/v1/requests')
-def get_all_requests():
-    limit = min(int(request.args.get('limit', 50)), 100)
-    offset = int(request.args.get('offset', 0))
-    status = request.args.get('status')
-
-    query = {}
-    if status:
-        query['status'] = status
-
-    requests = list(requests_collection.find(query).sort('createdAt', -1).skip(offset).limit(limit))
-    for req in requests:
-        req['id'] = str(req.pop('_id'))
-
-    return jsonify(requests)
-
-# TODO: Do we need to show logs to anyone?
 @app.route('/api/v1/requests/<request_id>/logs')
 def get_request_logs(request_id: str):
     try:
