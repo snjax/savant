@@ -41,6 +41,14 @@ requests_collection.create_index([('userId', 1), ('status', 1), ('createdAt', -1
 requests_collection.create_index([('status', 1), ('createdAt', -1)])
 requests_collection.create_index([('createdAt', -1)])
 
+# Reset any "processing" requests to "pending" on startup
+processing_requests = requests_collection.update_many(
+    {'status': 'processing'},
+    {'$set': {'status': 'pending'}}
+)
+if processing_requests.modified_count > 0:
+    logger.info(f"Reset {processing_requests.modified_count} processing requests to pending state")
+
 # Global variables for background processing
 processing_thread = None
 should_stop = threading.Event()
