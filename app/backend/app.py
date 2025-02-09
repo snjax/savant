@@ -443,16 +443,15 @@ def get_request_logs(request_id: str):
     return jsonify({'error': 'Request not found'}), 404
 
 @app.route('/api/v1/requests/<request_id>/source')
-@login_required
 def get_request_source(request_id: str):
     try:
         request = requests_collection.find_one({'_id': ObjectId(request_id)})
         if not request:
             return jsonify({'error': 'Request not found'}), 404
             
-        # Check if user has access to this request
-        if request['userId'] != current_user.id:
-            return jsonify({'error': 'Unauthorized'}), 403
+        # # Check if user has access to this request
+        # if request['userId'] != current_user.id:
+        #     return jsonify({'error': 'Unauthorized'}), 403
             
         source_file = os.path.join('requests', request_id, 'source.sol')
         if os.path.exists(source_file):
@@ -469,9 +468,9 @@ def get_request_report(request_id: str):
         if not request:
             return jsonify({'error': 'Request not found'}), 404
             
-        # Check if user has access to this request
-        if request['userId'] != current_user.id:
-            return jsonify({'error': 'Unauthorized'}), 403
+        # # Check if user has access to this request
+        # if request['userId'] != current_user.id:
+        #     return jsonify({'error': 'Unauthorized'}), 403
             
         report_file = os.path.join('requests', request_id, 'report.pdf')
         if os.path.exists(report_file):
