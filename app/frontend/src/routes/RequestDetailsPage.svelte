@@ -11,6 +11,7 @@
   let isLoading = true;
   let error: string | null = null;
   let interval: number;
+  let requestDetailsComponent: any;
 
   onMount(() => {
     loadInitialRequest().then(() => {
@@ -57,13 +58,10 @@
         return;
       }
 
-      try {
-        logs = await getRequestLogs(newRequest.id);
-      } catch (e) {
-        console.error('Failed to fetch logs:', e);
-      }
-      
       request = newRequest;
+      if (requestDetailsComponent) {
+        await requestDetailsComponent.updateContent();
+      }
     } catch (e) {
       console.error('Failed to update request:', e);
     }
@@ -79,6 +77,7 @@
     <div class="text-red-600">{error}</div>
   {:else if request}
     <RequestDetails 
+      bind:this={requestDetailsComponent}
       request={request}
       logs={logs}
       isLoading={false}

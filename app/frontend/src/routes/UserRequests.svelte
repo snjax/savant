@@ -22,6 +22,7 @@
   let offset = 0;
   let hasMore = true;
   const LIMIT = 20;
+  let requestDetailsComponent: any;
 
   onMount(() => {
     if (!$user) {
@@ -111,11 +112,13 @@
         const updatedRequest = updatedRequests.find(r => r.id === selectedRequest!.id);
         if (updatedRequest) {
           try {
-            logs = await getRequestLogs(updatedRequest.id);
+            selectedRequest = updatedRequest;
+            if (requestDetailsComponent) {
+              await requestDetailsComponent.updateContent();
+            }
           } catch (e) {
-            console.error('Failed to fetch logs:', e);
+            console.error('Failed to fetch content:', e);
           }
-          selectedRequest = updatedRequest;
         }
       }
     } catch (e) {
@@ -252,6 +255,7 @@
   <div class="hidden md:block w-2/3 pl-4">
     {#if selectedRequest}
       <RequestDetails 
+        bind:this={requestDetailsComponent}
         request={selectedRequest}
         logs={logs}
         isLoading={isDetailsLoading}

@@ -12,16 +12,46 @@
   let isSourceVisible = false;
   let isDownloading = false;
   let logsContainer: HTMLDivElement;
+  let previousLogs = '';
+  let previousRequestId = '';
+
+  export async function updateContent() {
+    try {
+      const newContent = isSourceVisible 
+        ? await getRequestSource(request.id)
+        : await getRequestLogs(request.id);
+      
+      if (onLogsChange) {
+        onLogsChange(newContent);
+      } else {
+        logs = newContent;
+      }
+    } catch (e) {
+      console.error('Failed to fetch content:', e);
+      const errorMessage = isSourceVisible ? 'Failed to load source code' : 'Failed to load logs';
+      if (onLogsChange) {
+        onLogsChange(errorMessage);
+      } else {
+        logs = errorMessage;
+      }
+    }
+  }
 
   afterUpdate(() => {
-    if (logsContainer) {
+    // Only autoscroll if:
+    // 1. We're showing logs (not source)
+    // 2. The logs content has changed
+    // 3. We're still looking at the same request
+    if (logsContainer && !isSourceVisible && logs !== previousLogs && request.id === previousRequestId) {
       logsContainer.scrollTop = logsContainer.scrollHeight;
     }
+    previousLogs = logs;
+    previousRequestId = request.id;
   });
 
   $: {
-    // Reset source visibility when request changes
-    if (request) {
+    // Reset source visibility when request ID changes
+    if (request && request.id !== previousRequestId) {
       isSourceVisible = false;
     }
   }
@@ -29,15 +59,7 @@
   async function toggleSource() {
     try {
       isSourceVisible = !isSourceVisible;
-      const newLogs = isSourceVisible 
-        ? await getRequestSource(request.id)
-        : await getRequestLogs(request.id);
-      
-      if (onLogsChange) {
-        onLogsChange(newLogs);
-      } else {
-        logs = newLogs;
-      }
+      await updateContent();
     } catch (e) {
       console.error('Failed to fetch source:', e);
       const errorMessage = 'Failed to load source code';
