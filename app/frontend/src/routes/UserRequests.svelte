@@ -165,15 +165,15 @@
 <div class="flex flex-col md:flex-row h-full">
   <!-- Requests List -->
   <div class="w-full md:w-1/3 border-r pr-4 space-y-4">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+    <div class="flex justify-end items-center">
+      <div class="flex items-center space-x-4">
         <StatusDropdown
           bind:value={selectedStatus}
           onChange={(value) => selectedStatus = value}
         />
         <label
           for="file-upload"
-          class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-center"
+          class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
         >
           New Request
         </label>

@@ -123,7 +123,7 @@
 </script>
 
 <div class="space-y-6">
-  <div class="flex justify-between items-center">
+  <div class="flex justify-end items-center">
     <div class="flex items-center space-x-4">
       <StatusDropdown
         bind:value={selectedStatus}
