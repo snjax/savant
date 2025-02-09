@@ -16,8 +16,13 @@ import time
 import logging
 from werkzeug.datastructures import FileStorage
 import atexit
+from concurrent.futures import ThreadPoolExecutor
+import queue
 
 load_dotenv()
+
+MAX_CONCURRENT_REQUESTS = 3
+MAX_REQUESTS_PER_USER = 3
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,19 +33,21 @@ logger = logging.getLogger(__name__)
 # MongoDB setup
 mongo_client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017'))
 db = mongo_client.get_database('savant')
-
 users_collection = db.get_collection('users')
 requests_collection = db.get_collection('requests')
-
 requests_collection.create_index([('status', 1), ('createdAt', 1)])
 requests_collection.create_index([('userId', 1), ('createdAt', -1)])
 requests_collection.create_index([('userId', 1), ('status', 1), ('createdAt', -1)])
 requests_collection.create_index([('status', 1), ('createdAt', -1)])
 requests_collection.create_index([('createdAt', -1)])
 
+# Global variables for background processing
 processing_thread = None
 should_stop = threading.Event()
 processing_lock = threading.Lock()
+request_queue = queue.Queue()
+thread_pool = ThreadPoolExecutor(max_workers=MAX_CONCURRENT_REQUESTS)
+active_requests = 0
 
 def stream_container_logs(container, log_file_path: str):
     """Stream container logs to a file in real-time"""
@@ -177,36 +184,51 @@ def process_request(req: Dict[str, Any]):
 
 def background_worker():
     """Background worker that processes requests from the queue"""
-    global should_stop
+    global should_stop, active_requests
     logger.info("Background worker started")
-    while True:
+    
+    while not should_stop.is_set():
         try:
             # Check for pending requests in the database
-            pending_request = requests_collection.find_one(
-                {'status': {'$in': ['pending', 'processing']}}, # FIXME: Remove failed
-                sort=[('createdAt', 1)]  # Process oldest first
-            )
+            with processing_lock:
+                if active_requests >= MAX_CONCURRENT_REQUESTS:
+                    logger.debug("Maximum concurrent requests reached, waiting...")
+                    time.sleep(1)
+                    continue
+                
+                pending_request = requests_collection.find_one(
+                    {'status': 'pending'},
+                    sort=[('createdAt', 1)]  # Process oldest first
+                )
 
-            if pending_request:
-                logger.info(f"Found pending request: {pending_request['_id']}")
-                pending_request['id'] = str(pending_request['_id'])
-                process_request(pending_request)
-            else:
-                logger.debug("No pending requests found, waiting...")
-                time.sleep(1)
+                if pending_request:
+                    logger.info(f"Found pending request: {pending_request['_id']}")
+                    pending_request['id'] = str(pending_request['_id'])
+                    active_requests += 1
+                    
+                    def process_and_cleanup(req):
+                        global active_requests
+                        try:
+                            process_request(req)
+                        finally:
+                            with processing_lock:
+                                active_requests -= 1
+                    
+                    thread_pool.submit(process_and_cleanup, pending_request)
+                else:
+                    logger.debug("No pending requests found, waiting...")
+                    time.sleep(1)
 
         except Exception as e:
             logger.error(f"Error in background worker: {e}", exc_info=True)
             time.sleep(1)
-        if should_stop.is_set():
-            logger.info("Background worker stopping")
-            break
 
 def start_background_worker():
     """Start the background worker thread"""
-    global processing_thread, should_stop
+    global processing_thread, should_stop, active_requests
     logger.info("Starting background worker thread")
     should_stop.clear()
+    active_requests = 0
     if processing_thread is None or not processing_thread.is_alive():
         processing_thread = threading.Thread(target=background_worker, daemon=True)
         processing_thread.start()
@@ -216,12 +238,14 @@ def start_background_worker():
 
 def stop_background_worker():
     """Stop the background worker thread"""
-    global should_stop
+    global should_stop, thread_pool
     logger.info("Stopping background worker thread")
     should_stop.set()
     if processing_thread:
         processing_thread.join(timeout=5)
         logger.info("Background worker thread stopped")
+    thread_pool.shutdown(wait=True)
+    logger.info("Thread pool shut down")
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev')
