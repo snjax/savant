@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Router, Link, Route, useLocation } from "svelte-routing";
+  import { Router, Link, Route } from "svelte-routing";
   import { onMount } from "svelte";
   import { user, initializeAuth, logout } from "./lib/auth";
   import Login from "./routes/Login.svelte";
@@ -9,11 +9,25 @@
 
   let initialized = false;
   let isMenuOpen = false;
-  const location = useLocation();
 
-  onMount(async () => {
-    await initializeAuth();
-    initialized = true;
+  $: currentPath = window.location.pathname;
+
+  // TODO: How to make useLocation work in App.svelte?
+  // Update path on navigation
+  const handleNavigate = (event: MouseEvent) => {
+    // Small delay to ensure the pathname is updated
+    setTimeout(() => {
+      currentPath = window.location.pathname;
+    }, 0);
+  };
+
+  onMount(() => {
+    const init = async () => {
+      await initializeAuth();
+      initialized = true;
+    };
+    
+    init();
   });
 
   async function handleLogout() {
@@ -24,8 +38,8 @@
     }
   }
 
-  $: isHome = $location?.pathname === "/";
-  $: isUserRequests = $user && $location?.pathname === `/user/${$user.id}`;
+  $: isHome = currentPath === "/";
+  $: isUserRequests = $user && currentPath === `/user/${$user.id}`;
 </script>
 
 {#if !initialized}
@@ -38,12 +52,13 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex">
-            <Link to="/" class="flex-shrink-0 flex items-center">
+            <Link to="/" class="flex-shrink-0 flex items-center" on:click={handleNavigate}>
               <h1 class="text-xl font-bold text-gray-900">Savant</h1>
             </Link>
             <div class="ml-6 flex space-x-4">
               <Link
                 to="/"
+                on:click={handleNavigate}
                 class="inline-flex items-center px-1 pt-1 text-sm font-medium {isHome ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
               >
                 All Requests
@@ -51,6 +66,7 @@
               {#if $user}
                 <Link
                   to={`/user/${$user.id}`}
+                  on:click={handleNavigate}
                   class="inline-flex items-center px-1 pt-1 text-sm font-medium {isUserRequests ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
                 >
                   My Requests
@@ -80,7 +96,10 @@
                       to={`/user/${$user.id}`}
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
-                      on:click={() => isMenuOpen = false}
+                      on:click={(e) => {
+                        isMenuOpen = false;
+                        handleNavigate(e);
+                      }}
                     >
                       My Requests
                     </Link>

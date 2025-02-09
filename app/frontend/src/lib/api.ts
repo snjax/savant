@@ -8,24 +8,14 @@ export interface Request {
 
 export type RequestStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
-export async function getUserRequests(userId: string, params: {
-  status?: RequestStatus;
-} = {}): Promise<Request[]> {
-  const searchParams = new URLSearchParams();
-  searchParams.set('user_id', userId);
-  if (params.status) searchParams.set('status', params.status);
-
-  const response = await fetch(`/api/v1/requests?${searchParams.toString()}`);
-  if (!response.ok) throw new Error('Failed to fetch user requests');
-  return response.json();
-}
-
 export async function getAllRequests(params: {
+  userId?: string;
   limit?: number;
   offset?: number;
   status?: RequestStatus;
 } = {}): Promise<Request[]> {
   const searchParams = new URLSearchParams();
+  if (params.userId) searchParams.set('user_id', params.userId);
   if (params.limit) searchParams.set('limit', params.limit.toString());
   if (params.offset) searchParams.set('offset', params.offset.toString());
   if (params.status) searchParams.set('status', params.status);

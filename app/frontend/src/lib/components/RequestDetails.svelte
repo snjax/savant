@@ -11,6 +11,13 @@
   let isSourceVisible = false;
   let isDownloading = false;
 
+  $: {
+    // Reset source visibility when request changes
+    if (request) {
+      isSourceVisible = false;
+    }
+  }
+
   async function toggleSource() {
     try {
       isSourceVisible = !isSourceVisible;
@@ -47,14 +54,14 @@
   }
 </script>
 
-<div class="space-y-6 p-6 bg-white rounded-xl shadow-sm">
-  <div class="flex justify-between items-center">
-    <h2 class="text-2xl font-bold text-gray-800 tracking-tight">
+<div class="space-y-4 sm:space-y-6 p-3 sm:p-6 bg-white rounded-xl shadow-sm">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
+    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">
       Request Details
     </h2>
-    <div class="space-x-4 flex items-center">
+    <div class="flex flex-wrap items-center gap-2 sm:gap-4">
       <button
-        class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 flex items-center gap-2 border border-blue-200 rounded-md hover:border-blue-300"
+        class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 flex items-center justify-center gap-2 border border-blue-200 rounded-md hover:border-blue-300"
         on:click={toggleSource}
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,7 +71,7 @@
       </button>
       {#if request?.status === 'completed'}
         <button
-          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2 shadow-sm"
+          class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2 shadow-sm"
           on:click={handleDownload}
           disabled={isDownloading}
         >
@@ -77,7 +84,7 @@
     </div>
   </div>
   
-  <div class="bg-gray-50 rounded-xl p-6 grid grid-cols-2 gap-4 border border-gray-100">
+  <div class="bg-gray-50 rounded-xl p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border border-gray-100">
     <div class="space-y-1">
       <p class="text-sm text-gray-500">ID</p>
       <p class="font-medium text-gray-900">{request.id}</p>
@@ -105,11 +112,11 @@
   </div>
 
   {#if isLoading}
-    <div class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    <div class="flex justify-center py-8 sm:py-12">
+      <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   {:else}
-    <div class="bg-gray-900 rounded-xl p-6 h-[32rem] overflow-auto border border-gray-800 shadow-inner">
+    <div class="bg-gray-900 rounded-xl p-3 sm:p-6 h-[24rem] sm:h-[32rem] overflow-auto border border-gray-800 shadow-inner">
       <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap leading-relaxed">{logs}</pre>
     </div>
   {/if}

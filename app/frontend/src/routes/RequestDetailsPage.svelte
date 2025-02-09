@@ -77,7 +77,7 @@
   }
 </script>
 
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto space-y-6">
   {#if isLoading}
     <div class="flex justify-center">
       <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>

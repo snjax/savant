@@ -10,6 +10,17 @@
   let isLoading = true;
   let error: string | null = null;
   let selectedStatus: RequestStatus | '' = '';
+  
+  // Simplified pagination state
+  let offset = 0;
+  let hasMore = true;
+  let isLoadingMore = false;
+  const LIMIT = 20;
+  let isMobileView = false;
+
+  function checkMobileView() {
+    isMobileView = window.innerWidth < 768;
+  }
 
   onMount(() => {
     if (!$user) {
@@ -18,23 +29,75 @@
     }
 
     loadRequests();
+    checkMobileView();
 
-    // Poll for updates every 5 seconds
-    const interval = setInterval(loadRequests, 5000);
-    return () => clearInterval(interval);
+    // Add scroll event listener only for mobile view
+    const handleScroll = () => {
+      if (!isMobileView) return;
+      
+      const scrollPosition = window.scrollY + window.innerHeight;
+      const threshold = document.documentElement.scrollHeight - 100; // Load when 100px from bottom
+      
+      if (scrollPosition >= threshold && !isLoadingMore && hasMore) {
+        loadMore();
+      }
+    };
+
+    const handleResize = () => {
+      checkMobileView();
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
   });
 
   async function loadRequests() {
     try {
-      requests = await getAllRequests({ 
-        limit: 50,
+      offset = 0;
+      isLoading = true;
+      const newRequests = await getAllRequests({ 
+        limit: LIMIT,
+        offset: 0,
         status: selectedStatus || undefined 
       });
+      requests = newRequests;
+      hasMore = newRequests.length === LIMIT;
     } catch (e) {
       error = 'Failed to load requests';
       console.error(e);
     } finally {
       isLoading = false;
+    }
+  }
+
+  async function loadMore() {
+    if (isLoadingMore || !hasMore) return;
+    
+    try {
+      isLoadingMore = true;
+      const nextOffset = offset + LIMIT;
+      const newRequests = await getAllRequests({ 
+        limit: LIMIT,
+        offset: nextOffset,
+        status: selectedStatus || undefined 
+      });
+      
+      if (newRequests.length > 0) {
+        requests = [...requests, ...newRequests];
+        offset = nextOffset;
+        hasMore = newRequests.length === LIMIT;
+      } else {
+        hasMore = false;
+      }
+    } catch (e) {
+      console.error('Failed to load more requests:', e);
+    } finally {
+      isLoadingMore = false;
     }
   }
 
@@ -61,7 +124,6 @@
 
 <div class="space-y-6">
   <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-900">All Requests</h1>
     <div class="flex items-center space-x-4">
       <StatusDropdown
         bind:value={selectedStatus}
@@ -120,6 +182,31 @@
           </div>
         </Link>
       {/each}
+
+      {#if isLoadingMore}
+        <div class="flex justify-center py-4">
+          <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      {:else if hasMore}
+        <div class="flex justify-center py-4">
+          <button
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            on:click={loadMore}
+            disabled={isLoadingMore}
+          >
+            {#if isLoadingMore}
+              <div class="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              Loading...
+            {:else}
+              Load More
+            {/if}
+          </button>
+        </div>
+      {:else if requests.length > 0}
+        <div class="text-gray-500 text-center py-4">
+          No more requests to load
+        </div>
+      {/if}
     </div>
   {/if}
 </div> 
