@@ -39,6 +39,12 @@
       return;
     }
 
+    if (file.size > 3000) {
+      errorMessage = 'File size exceeds the limit of 3000 characters';
+      input.value = '';
+      return;
+    }
+
     try {
       isUploading = true;
       errorMessage = null;
