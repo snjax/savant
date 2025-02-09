@@ -1,3 +1,8 @@
+# ⚠️ Important Notice: This repository contains limited version of the final product. 
+# We are currently withholding the full version due to its exceptional effectiveness 
+# at discovering critical vulnerabilities in smart contracts. The full version will 
+# be published after careful consideration of responsible disclosure practices.
+
 from pathlib import Path
 import sys
 from typing import List, Set, Dict, Generator, Tuple, AsyncIterator
