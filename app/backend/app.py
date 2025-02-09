@@ -149,7 +149,10 @@ def process_request(req: Dict[str, Any]):
             logger.info(f"Request {req['id']} completed with status {new_status}")
             requests_collection.update_one(
                 {'_id': ObjectId(req['id'])},
-                {'$set': {'status': new_status}},
+                {'$set': {
+                    'status': new_status,
+                    'finishedAt': datetime.now(timezone.utc)
+                }},
                 upsert=True
             )
         finally:
@@ -165,7 +168,10 @@ def process_request(req: Dict[str, Any]):
             f.write(f'Error: {str(e)}')
         requests_collection.update_one(
             {'_id': ObjectId(req['id'])},
-            {'$set': {'status': 'failed'}},
+            {'$set': {
+                'status': 'failed',
+                'finishedAt': datetime.now(timezone.utc)
+            }},
             upsert=True
         )
 

@@ -92,23 +92,18 @@
     </div>
   </div>
   
-  <div class="bg-gray-50 rounded-xl p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border border-gray-100">
-    <div class="space-y-1">
-      <p class="text-sm text-gray-500">ID</p>
-      <p class="font-medium text-gray-900">{request.id}</p>
-    </div>
-    <div class="space-y-1">
-      <p class="text-sm text-gray-500">Status</p>
-      <p class="font-medium">
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
-          {request.status === 'completed' ? 'bg-green-100 text-green-800' : 
-          request.status === 'failed' ? 'bg-red-100 text-red-800' : 
-          request.status === 'processing' ? 'bg-blue-100 text-blue-800' : 
-          'bg-gray-100 text-gray-800'}">
-          {request.status}
-        </span>
-      </p>
-    </div>
+  <div class="bg-gray-50 rounded-xl p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border border-gray-100 relative
+    {request.status === 'completed' ? 'bg-green-50/50 border-green-100' : 
+    request.status === 'failed' ? 'bg-red-50/50 border-red-100' : 
+    request.status === 'processing' ? 'bg-blue-50/50 border-blue-100' : 
+    'bg-gray-50/50 border-gray-100'}">
+    <span class="absolute top-4 right-4 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
+      {request.status === 'completed' ? 'bg-green-100 text-green-800' : 
+      request.status === 'failed' ? 'bg-red-100 text-red-800' : 
+      request.status === 'processing' ? 'bg-blue-100 text-blue-800' : 
+      'bg-gray-100 text-gray-800'}">
+      {request.status}
+    </span>
     <div class="space-y-1">
       <p class="text-sm text-gray-500">File</p>
       <p class="font-medium text-gray-900 truncate" title={request.fileName}>{request.fileName}</p>
@@ -117,6 +112,25 @@
       <p class="text-sm text-gray-500">Created</p>
       <p class="font-medium text-gray-900">{new Date(request.createdAt).toLocaleString()}</p>
     </div>
+    {#if request.finishedAt}
+      <div class="space-y-1">
+        <p class="text-sm text-gray-500">Finished</p>
+        <p class="font-medium text-gray-900">{new Date(request.finishedAt).toLocaleString()}</p>
+      </div>
+      <div class="space-y-1">
+        <p class="text-sm text-gray-500">Total Time</p>
+        <p class="font-medium text-gray-900">
+          {(() => {
+            const start = new Date(request.createdAt);
+            const end = new Date(request.finishedAt);
+            const diff = Math.floor((end.getTime() - start.getTime()) / 1000);
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+            return `${minutes}m ${seconds}s`;
+          })()}
+        </p>
+      </div>
+    {/if}
   </div>
 
   {#if isLoading}

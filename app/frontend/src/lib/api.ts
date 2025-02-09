@@ -3,6 +3,7 @@ export interface Request {
   userId: string;
   status: RequestStatus;
   createdAt: string;
+  finishedAt?: string;
   fileName: string;
 }
 
