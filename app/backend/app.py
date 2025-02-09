@@ -400,7 +400,11 @@ def requests_handler():
     request_id = str(new_request['_id'])
     request_dir = os.path.join('requests', request_id)
     logger.info(f"Creating request directory: {os.path.abspath(request_dir)}")
+    # TODO: Probably not the best way, but I'm tired of fixing permissions
+    old_mask = os.umask(0o000)
     os.makedirs(request_dir, exist_ok=True, mode=0o777)
+    os.chmod(request_dir, 0o777)
+    os.umask(old_mask)
 
     file_path = os.path.join(request_dir, 'source.sol')
     logger.info(f"Saving file to: {os.path.abspath(file_path)}")
