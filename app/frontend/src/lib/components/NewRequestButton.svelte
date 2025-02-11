@@ -64,11 +64,15 @@
 <button
   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
   on:click={openModal}
-  disabled={($user?.remainingRequests ?? 0) <= 0}
+  disabled={!$user?.isAdmin && ($user?.remainingRequests ?? 0) <= 0}
 >
   <span>New Request</span>
   {#if $user}
-    <span class="text-sm opacity-75">({Math.max(0, $user.remainingRequests)}/{$user.maxRequests})</span>
+    {#if $user.isAdmin}
+      <span class="text-sm opacity-75">(∞)</span>
+    {:else}
+      <span class="text-sm opacity-75">({Math.max(0, $user.remainingRequests)}/{$user.maxRequests})</span>
+    {/if}
   {/if}
 </button>
 
@@ -78,7 +82,7 @@
   title="New Code Analysis Request"
 >
   <div class="space-y-6">
-    {#if ($user?.remainingRequests ?? 0) <= 0}
+    {#if ($user?.remainingRequests ?? 0) <= 0 && !$user?.isAdmin}
       <div class="text-red-600 bg-red-50 p-4 rounded-lg text-sm">
         You have reached the maximum number of active requests ({$user?.maxRequests}). Please wait for some of your existing requests to complete before creating new ones.
       </div>

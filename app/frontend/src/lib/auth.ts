@@ -5,6 +5,7 @@ export interface User {
   email: string;
   name: string;
   picture?: string;
+  isAdmin: boolean;
   activeRequests: number;
   maxRequests: number;
   remainingRequests: number;

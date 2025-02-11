@@ -304,17 +304,18 @@ def get_docker_client():
     return _docker_client
 
 class User(UserMixin):
-    def __init__(self, user_id: str, email: str, name: str):
+    def __init__(self, user_id: str, email: str, name: str, is_admin: bool = False):
         self.id = user_id
         self.email = email
         self.name = name
+        self.is_admin = is_admin
 
 @login_manager.user_loader
 def load_user(user_id: str) -> Optional[User]:
     user_data = users_collection.find_one({'_id': user_id})
     if not user_data:
         return None
-    return User(user_id, user_data['email'], user_data['name'])
+    return User(user_id, user_data['email'], user_data['name'], user_data.get('is_admin', False))
 
 @app.route('/api/v1/user/me')
 def get_current_user():
@@ -329,15 +330,20 @@ def get_current_user():
         'userId': current_user.id,
         'status': {'$in': ['pending', 'processing', 'completed']}
     })
+    
+    is_admin = user_data.get('is_admin', False)
+    max_requests = 100000000 if is_admin else MAX_REQUESTS_PER_USER
+    remaining_requests = 100000000 if is_admin else max(0, MAX_REQUESTS_PER_USER - active_requests)
         
     return jsonify({
         'id': current_user.id,
         'email': current_user.email,
         'name': current_user.name,
         'picture': user_data.get('picture'),
+        'isAdmin': is_admin,
         'activeRequests': active_requests,
-        'maxRequests': MAX_REQUESTS_PER_USER,
-        'remainingRequests': max(0, MAX_REQUESTS_PER_USER - active_requests)
+        'maxRequests': max_requests,
+        'remainingRequests': remaining_requests
     })
 
 @app.route('/api/v1/auth/login', methods=['POST'])
@@ -368,20 +374,38 @@ def login():
             'last_login': datetime.now(timezone.utc)
         }
         
+        existing_user = users_collection.find_one({'_id': user_id})
+        if existing_user and existing_user.get('is_admin'):
+            user_data['is_admin'] = True
+        
         users_collection.update_one(
             {'_id': user_id},
             {'$set': user_data},
             upsert=True
         )
         
-        user = User(user_id, user_data['email'], user_data['name'])
+        user = User(user_id, user_data['email'], user_data['name'], user_data.get('is_admin', False))
         login_user(user)
+        
+        # Get active requests count for the user
+        active_requests = requests_collection.count_documents({
+            'userId': user_id,
+            'status': {'$in': ['pending', 'processing', 'completed']}
+        })
+        
+        is_admin = user_data.get('is_admin', False)
+        max_requests = 100000000 if is_admin else MAX_REQUESTS_PER_USER
+        remaining_requests = 100000000 if is_admin else max(0, MAX_REQUESTS_PER_USER - active_requests)
         
         return jsonify({
             'id': user_id,
             'email': user_data['email'],
             'name': user_data['name'],
-            'picture': user_data.get('picture')
+            'picture': user_data.get('picture'),
+            'isAdmin': is_admin,
+            'activeRequests': active_requests,
+            'maxRequests': max_requests,
+            'remainingRequests': remaining_requests
         })
     except ValueError as e:
         return jsonify({'error': str(e)}), 401
@@ -395,6 +419,10 @@ def logout():
     return jsonify({'success': True})
 
 def check_user_request_limit(user_id: str) -> bool:
+    user_data = users_collection.find_one({'_id': user_id})
+    if user_data and user_data.get('is_admin', False):
+        return True
+        
     active_requests = requests_collection.count_documents({
         'userId': user_id,
         'status': {'$in': ['pending', 'processing', 'completed']}
