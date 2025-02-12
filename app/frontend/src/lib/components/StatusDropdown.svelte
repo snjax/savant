@@ -58,7 +58,7 @@
   <button
     type="button"
     class="inline-flex items-center gap-x-2 bg-white px-3 py-2 text-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 
-           rounded-md shadow-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+           rounded-md shadow-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary"
     on:click={() => isOpen = !isOpen}
   >
     <span class="flex items-center gap-x-2">
@@ -79,14 +79,14 @@
       <div class="py-1">
         {#each options as option}
           <button
-            class="flex w-full items-center gap-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 
-                   {selectedValue === option.value ? 'bg-gray-50 text-blue-600' : ''}"
+            class="flex w-full items-center gap-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-secondary/10 
+                   {selectedValue === option.value ? 'bg-secondary/5 text-secondary' : ''}"
             on:click={() => handleSelect(option)}
           >
             <span class="text-lg">{option.icon}</span>
             {option.label}
             {#if selectedValue === option.value}
-              <span class="ml-auto text-blue-600">✓</span>
+              <span class="ml-auto text-secondary">✓</span>
             {/if}
           </button>
         {/each}

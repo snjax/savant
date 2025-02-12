@@ -71,7 +71,7 @@
 <div class="container mx-auto space-y-6">
   {#if isLoading}
     <div class="flex justify-center">
-      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
     </div>
   {:else if error}
     <div class="text-red-600">{error}</div>

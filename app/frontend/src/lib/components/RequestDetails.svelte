@@ -86,12 +86,12 @@
 
 <div class="space-y-4 sm:space-y-6 p-3 sm:p-6 bg-white rounded-xl shadow-sm">
   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
-    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">
+    <h2 class="text-xl sm:text-2xl font-bold text-secondary tracking-tight">
       Request Details
     </h2>
     <div class="flex flex-wrap items-center gap-2 sm:gap-4">
       <button
-        class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 flex items-center justify-center gap-2 border border-blue-200 rounded-md hover:border-blue-300"
+        class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium text-secondary hover:text-secondary-hover transition-colors duration-200 flex items-center justify-center gap-2 border border-secondary/20 rounded-md hover:border-secondary/40"
         on:click={toggleSource}
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,7 +101,7 @@
       </button>
       {#if request?.status === 'completed'}
         <button
-          class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2 shadow-sm"
+          class="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2 shadow-sm"
           on:click={handleDownload}
           disabled={isDownloading}
         >
@@ -117,31 +117,31 @@
   <div class="bg-gray-50 rounded-xl p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 border border-gray-100 relative
     {request.status === 'completed' ? 'bg-green-50/50 border-green-100' : 
     request.status === 'failed' ? 'bg-red-50/50 border-red-100' : 
-    request.status === 'processing' ? 'bg-blue-50/50 border-blue-100' : 
+    request.status === 'processing' ? 'bg-primary/5 border-primary/20' : 
     'bg-gray-50/50 border-gray-100'}">
     <span class="absolute top-4 right-4 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
       {request.status === 'completed' ? 'bg-green-100 text-green-800' : 
       request.status === 'failed' ? 'bg-red-100 text-red-800' : 
-      request.status === 'processing' ? 'bg-blue-100 text-blue-800' : 
+      request.status === 'processing' ? 'bg-primary/10 text-primary' : 
       'bg-gray-100 text-gray-800'}">
       {request.status}
     </span>
     <div class="space-y-1">
       <p class="text-sm text-gray-500">File</p>
-      <p class="font-medium text-gray-900 truncate" title={request.fileName}>{request.fileName}</p>
+      <p class="font-medium text-secondary truncate" title={request.fileName}>{request.fileName}</p>
     </div>
     <div class="space-y-1">
       <p class="text-sm text-gray-500">Created</p>
-      <p class="font-medium text-gray-900">{new Date(request.createdAt).toLocaleString()}</p>
+      <p class="font-medium text-secondary">{new Date(request.createdAt).toLocaleString()}</p>
     </div>
     {#if request.finishedAt}
       <div class="space-y-1">
         <p class="text-sm text-gray-500">Finished</p>
-        <p class="font-medium text-gray-900">{new Date(request.finishedAt).toLocaleString()}</p>
+        <p class="font-medium text-secondary">{new Date(request.finishedAt).toLocaleString()}</p>
       </div>
       <div class="space-y-1">
         <p class="text-sm text-gray-500">Total Time</p>
-        <p class="font-medium text-gray-900">
+        <p class="font-medium text-secondary">
           {(() => {
             const start = new Date(request.createdAt);
             const end = new Date(request.finishedAt);
@@ -157,7 +157,7 @@
 
   {#if isLoading}
     <div class="flex justify-center py-8 sm:py-12">
-      <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div class="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-primary"></div>
     </div>
   {:else}
     <div 

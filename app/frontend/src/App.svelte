@@ -46,7 +46,7 @@
 
 {#if !initialized}
   <div class="flex h-screen items-center justify-center">
-    <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+    <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
   </div>
 {:else}
   <Router>
@@ -55,13 +55,13 @@
         <div class="flex justify-between h-16">
           <div class="flex">
             <Link to="/" class="flex-shrink-0 flex items-center" on:click={handleNavigate}>
-              <h1 class="text-xl font-bold text-gray-900">Savant</h1>
+              <h1 class="text-xl font-bold text-secondary">Savant</h1>
             </Link>
             <div class="ml-6 flex space-x-4">
               <Link
                 to="/"
                 on:click={handleNavigate}
-                class="inline-flex items-center px-1 pt-1 text-sm font-medium {isHome ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium {isHome ? 'text-secondary border-b-2 border-secondary' : 'text-gray-900 hover:text-secondary'}"
               >
                 All Requests
               </Link>
@@ -69,7 +69,7 @@
                 <Link
                   to={`/user/${$user.id}`}
                   on:click={handleNavigate}
-                  class="inline-flex items-center px-1 pt-1 text-sm font-medium {isUserRequests ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
+                  class="inline-flex items-center px-1 pt-1 text-sm font-medium {isUserRequests ? 'text-secondary border-b-2 border-secondary' : 'text-gray-900 hover:text-secondary'}"
                 >
                   My Requests
                 </Link>
@@ -77,7 +77,7 @@
               <Link
                 to="/pricing"
                 on:click={handleNavigate}
-                class="inline-flex items-center px-1 pt-1 text-sm font-medium {currentPath === '/pricing' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium {currentPath === '/pricing' ? 'text-secondary border-b-2 border-secondary' : 'text-gray-900 hover:text-secondary'}"
               >
                 Pricing
               </Link>
@@ -100,7 +100,7 @@
               <div class="relative">
                 <button
                   on:click={() => isMenuOpen = !isMenuOpen}
-                  class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  class="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
                 >
                   <img
                     class="h-8 w-8 rounded-full"
@@ -115,7 +115,7 @@
                   >
                     <Link
                       to="/profile"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary/10"
                       role="menuitem"
                       on:click={(e) => {
                         isMenuOpen = false;
@@ -126,7 +126,7 @@
                     </Link>
                     <Link
                       to={`/user/${$user.id}`}
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-secondary/10"
                       role="menuitem"
                       on:click={(e) => {
                         isMenuOpen = false;
@@ -137,7 +137,7 @@
                     </Link>
                     <button
                       on:click={handleLogout}
-                      class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-secondary/10"
                       role="menuitem"
                     >
                       Sign out
@@ -148,7 +148,7 @@
             {:else}
               <Link
                 to="/login"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-hover"
               >
                 Sign In
               </Link>
@@ -170,7 +170,7 @@
     <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-auto">
       <p class="text-center text-gray-600">
         Want to work together or have questions? Feel free to reach out to 
-        <a href="https://t.me/AlexandraGulamova" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">Alexandra Gulamova</a>
+        <a href="https://t.me/AlexandraGulamova" class="text-secondary hover:text-secondary-hover underline" target="_blank" rel="noopener noreferrer">Alexandra Gulamova</a>
       </p>
     </footer>
   </Router>

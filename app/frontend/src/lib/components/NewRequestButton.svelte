@@ -62,7 +62,7 @@
 </script>
 
 <button
-  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+  class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
   on:click={openModal}
   disabled={!$user?.isAdmin && ($user?.remainingRequests ?? 0) <= 0}
 >
@@ -109,7 +109,7 @@
       
       <label
         for="file-upload-modal"
-        class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="cursor-pointer bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
         class:opacity-50={isUploading}
         class:cursor-not-allowed={isUploading}
       >

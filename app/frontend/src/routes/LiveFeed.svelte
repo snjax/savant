@@ -140,7 +140,7 @@
       {:else}
         <Link
           to="/login"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+          class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md"
         >
           New Request
         </Link>
@@ -150,7 +150,7 @@
 
   {#if isLoading}
     <div class="flex justify-center">
-      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
     </div>
   {:else if error}
     <div class="text-red-600 text-center">{error}</div>
@@ -163,21 +163,21 @@
           <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start">
               <div>
-                <h3 class="text-lg font-medium text-gray-900">{request.fileName}</h3>
+                <h3 class="text-lg font-medium text-secondary">{request.fileName}</h3>
                 <p class="text-sm text-gray-500">
                   Created {new Date(request.createdAt).toLocaleString()}
                 </p>
               </div>
               <span
-                class="px-2 py-1 text-sm rounded-full"
-                class:bg-yellow-100={request.status === 'pending'}
-                class:text-yellow-800={request.status === 'pending'}
-                class:bg-blue-100={request.status === 'processing'}
-                class:text-blue-800={request.status === 'processing'}
-                class:bg-green-100={request.status === 'completed'}
-                class:text-green-800={request.status === 'completed'}
-                class:bg-red-100={request.status === 'failed'}
-                class:text-red-800={request.status === 'failed'}
+                class={`px-2 py-1 text-sm rounded-full ${
+                  request.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : request.status === 'processing'
+                    ? 'bg-primary/10 text-primary'
+                    : request.status === 'completed'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}
               >
                 {request.status}
               </span>
@@ -188,12 +188,12 @@
 
       {#if isLoadingMore}
         <div class="flex justify-center py-4">
-          <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
         </div>
       {:else if hasMore}
         <div class="flex justify-center py-4">
           <button
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             on:click={loadMore}
             disabled={isLoadingMore}
           >

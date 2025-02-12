@@ -186,7 +186,7 @@
     
     {#if isLoading}
       <div class="flex justify-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
       </div>
     {:else if error}
       <div class="text-red-600">{error}</div>
@@ -195,32 +195,32 @@
     {:else}
       <div class="space-y-4">
         {#each requests as request}
-          <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition-shadow relative" class:ring-2={selectedRequest?.id === request.id} class:ring-blue-500={selectedRequest?.id === request.id}>
+          <div class="bg-white shadow rounded-lg p-4 hover:shadow-md transition-shadow relative" class:ring-2={selectedRequest?.id === request.id} class:ring-secondary={selectedRequest?.id === request.id}>
             <button 
               class="block w-full text-left"
               on:click={() => selectRequest(request)}
             >
-              <h3 class="font-medium text-gray-900">{request.fileName}</h3>
+              <h3 class="font-medium text-secondary">{request.fileName}</h3>
               <p class="text-sm text-gray-500">
                 Created {new Date(request.createdAt).toLocaleString()}
               </p>
               <span
-                class="inline-block mt-2 px-2 py-1 text-sm rounded-full"
-                class:bg-yellow-100={request.status === 'pending'}
-                class:text-yellow-800={request.status === 'pending'}
-                class:bg-blue-100={request.status === 'processing'}
-                class:text-blue-800={request.status === 'processing'}
-                class:bg-green-100={request.status === 'completed'}
-                class:text-green-800={request.status === 'completed'}
-                class:bg-red-100={request.status === 'failed'}
-                class:text-red-800={request.status === 'failed'}
+                class={`inline-block mt-2 px-2 py-1 text-sm rounded-full ${
+                  request.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : request.status === 'processing'
+                    ? 'bg-primary/10 text-primary'
+                    : request.status === 'completed'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}
               >
                 {request.status}
               </span>
             </button>
             <Link
               to={`/request/${request.id}`}
-              class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full md:block"
+              class="absolute top-4 right-4 p-2 text-gray-500 hover:text-secondary hover:bg-secondary/5 rounded-full md:block"
               title="Open request details"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -234,7 +234,7 @@
         {#if hasMore}
           <div class="flex justify-center py-4">
             <button
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               on:click={loadMore}
               disabled={isLoadingMore}
             >
@@ -251,17 +251,17 @@
     {/if}
   </div>
 
-  <!-- Request Details (Desktop Only) -->
-  <div class="hidden md:block w-2/3 pl-4">
+  <!-- Request Details -->
+  <div class="w-full md:w-2/3 pl-4 hidden md:block">
     {#if selectedRequest}
-      <RequestDetails 
+      <RequestDetails
         bind:this={requestDetailsComponent}
         request={selectedRequest}
         logs={logs}
         isLoading={isDetailsLoading}
       />
     {:else}
-      <div class="text-gray-500 text-center mt-8">
+      <div class="flex items-center justify-center h-full text-gray-500">
         Select a request to view details
       </div>
     {/if}
