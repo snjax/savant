@@ -7,6 +7,7 @@
   import UserRequests from "./routes/UserRequests.svelte";
   import RequestDetailsPage from "./routes/RequestDetailsPage.svelte";
   import Profile from "./routes/Profile.svelte";
+  import Pricing from "./routes/Pricing.svelte";
 
   let initialized = false;
   let isMenuOpen = false;
@@ -73,6 +74,13 @@
                   My Requests
                 </Link>
               {/if}
+              <Link
+                to="/pricing"
+                on:click={handleNavigate}
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium {currentPath === '/pricing' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-900 hover:text-blue-500'}"
+              >
+                Pricing
+              </Link>
             </div>
           </div>
           <div class="flex items-center">
@@ -156,6 +164,7 @@
       <Route path="/user/:userId" component={UserRequests} />
       <Route path="/request/:requestId" component={RequestDetailsPage} />
       <Route path="/profile" component={Profile} />
+      <Route path="/pricing" component={Pricing} />
     </main>
 
     <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-auto">

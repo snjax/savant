@@ -2,6 +2,7 @@
   import { user } from "../lib/auth";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
+  import { navigate } from "svelte-routing";
 
   let showTopUpModal = false;
   let loading = false;
@@ -12,6 +13,13 @@
     { date: "2024-03-14", description: "PLACEHOLDER: Service usage", amount: -25 },
     { date: "2024-03-10", description: "PLACEHOLDER: Bonus credit", amount: 50 },
   ];
+
+  onMount(() => {
+    if (!$user) {
+      navigate('/login', { replace: true });
+      return;
+    }
+  });
 
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -131,25 +139,20 @@
           <div class="p-4 rounded-lg bg-gray-50">
             <h4 class="font-medium text-gray-900 mb-2">Available Upgrades</h4>
             <div class="space-y-3">
-              <button class="w-full flex items-center justify-between p-3 rounded-lg border-2 border-purple-200 hover:border-purple-500 bg-white transition-colors">
+              <button class="w-full flex items-center justify-between p-3 rounded-lg border-2 border-purple-200 hover:border-purple-500 bg-white transition-colors cursor-not-allowed" disabled>
                 <span class="text-gray-900 font-medium">Pro Tier</span>
                 <div class="text-right">
-                  <div class="text-sm text-gray-600">$5,000 limit</div>
+                  <div class="text-sm text-gray-600">Coming Soon</div>
                   <div class="text-xs text-purple-600">Requires KYC</div>
                 </div>
               </button>
-              <a
-                href="https://t.me/AlexandraGulamova"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="w-full flex items-center justify-between p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 bg-white transition-colors"
-              >
+              <button class="w-full flex items-center justify-between p-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 bg-white transition-colors cursor-not-allowed" disabled>
                 <span class="text-gray-900 font-medium">Enterprise Tier</span>
                 <div class="text-right">
-                  <div class="text-sm text-gray-600">Custom limit</div>
+                  <div class="text-sm text-gray-600">Coming Soon</div>
                   <div class="text-xs text-gray-600">Contact us</div>
                 </div>
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -160,7 +163,7 @@
         <h2 class="text-xl font-semibold text-gray-800 mb-6">Subscription Options</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Basic Tier Subscription -->
-          <div class="rounded-lg border-2 border-gray-200 p-6 bg-white hover:border-blue-500 transition-colors">
+          <div class="rounded-lg border-2 border-gray-200 p-6 bg-white hover:border-blue-500 transition-colors flex flex-col h-full">
             <div class="text-center mb-4">
               <span class="inline-block px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 mb-2">Basic Tier</span>
               <div class="mt-2">
@@ -168,7 +171,7 @@
               </div>
               <p class="text-sm text-gray-500 mt-2">Get $500 worth of requests</p>
             </div>
-            <div class="mt-4 space-y-2 text-sm text-gray-600">
+            <div class="mt-4 space-y-2 text-sm text-gray-600 flex-grow">
               <p class="flex items-center">
                 <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -179,16 +182,16 @@
                 <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                Valid for 30 days
+                Monthly subscription
               </p>
             </div>
-            <button class="w-full mt-6 py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
-              Purchase
+            <button class="w-full mt-6 py-2 px-4 bg-gray-100 text-gray-500 rounded-lg font-medium cursor-not-allowed" disabled>
+              Coming Soon
             </button>
           </div>
 
           <!-- Pro Tier Subscription -->
-          <div class="rounded-lg border-2 border-gray-200 p-6 bg-white hover:border-purple-500 transition-colors">
+          <div class="rounded-lg border-2 border-gray-200 p-6 bg-white hover:border-purple-500 transition-colors flex flex-col h-full">
             <div class="text-center mb-4">
               <span class="inline-block px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800 mb-2">Pro Tier</span>
               <div class="mt-2">
@@ -196,7 +199,7 @@
               </div>
               <p class="text-sm text-gray-500 mt-2">Get $5,000 worth of requests</p>
             </div>
-            <div class="mt-4 space-y-2 text-sm text-gray-600">
+            <div class="mt-4 space-y-2 text-sm text-gray-600 flex-grow">
               <p class="flex items-center">
                 <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -207,16 +210,16 @@
                 <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                Valid for 30 days
+                Monthly subscription
               </p>
             </div>
             <button class="w-full mt-6 py-2 px-4 bg-gray-100 text-gray-500 rounded-lg font-medium cursor-not-allowed" disabled>
-              Requires Pro Tier
+              Coming Soon
             </button>
           </div>
 
           <!-- Enterprise Subscription -->
-          <div class="rounded-lg border-2 border-gray-200 p-6 bg-white hover:border-gray-900 transition-colors">
+          <div class="rounded-lg border-2 border-gray-200 p-6 bg-white hover:border-gray-900 transition-colors flex flex-col h-full">
             <div class="text-center mb-4">
               <span class="inline-block px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800 mb-2">Enterprise</span>
               <div class="mt-2">
@@ -224,7 +227,7 @@
               </div>
               <p class="text-sm text-gray-500 mt-2">Tailored subscription plans</p>
             </div>
-            <div class="mt-4 space-y-2 text-sm text-gray-600">
+            <div class="mt-4 space-y-2 text-sm text-gray-600 flex-grow">
               <p class="flex items-center">
                 <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -238,14 +241,9 @@
                 Flexible terms
               </p>
             </div>
-            <a
-              href="https://t.me/AlexandraGulamova"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="block w-full mt-6 py-2 px-4 bg-gray-900 text-white rounded-lg font-medium text-center hover:bg-gray-800 transition-colors"
-            >
-              Contact Sales
-            </a>
+            <button class="w-full mt-6 py-2 px-4 bg-gray-100 text-gray-500 rounded-lg font-medium cursor-not-allowed" disabled>
+              Coming Soon
+            </button>
           </div>
         </div>
       </div>
