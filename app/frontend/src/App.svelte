@@ -6,6 +6,7 @@
   import LiveFeed from "./routes/LiveFeed.svelte";
   import UserRequests from "./routes/UserRequests.svelte";
   import RequestDetailsPage from "./routes/RequestDetailsPage.svelte";
+  import Profile from "./routes/Profile.svelte";
 
   let initialized = false;
   let isMenuOpen = false;
@@ -76,6 +77,18 @@
           </div>
           <div class="flex items-center">
             {#if $user}
+              <div class="flex items-center mr-4">
+                <Link
+                  to="/profile"
+                  class="flex items-center hover:opacity-75 transition-opacity"
+                  on:click={handleNavigate}
+                >
+                  <div class="text-right mr-4">
+                    <p class="text-sm font-medium text-gray-900">$0.00</p>
+                    <p class="text-xs text-gray-500">Basic Tier</p>
+                  </div>
+                </Link>
+              </div>
               <div class="relative">
                 <button
                   on:click={() => isMenuOpen = !isMenuOpen}
@@ -92,6 +105,17 @@
                     class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50"
                     role="menu"
                   >
+                    <Link
+                      to="/profile"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      role="menuitem"
+                      on:click={(e) => {
+                        isMenuOpen = false;
+                        handleNavigate(e);
+                      }}
+                    >
+                      Profile
+                    </Link>
                     <Link
                       to={`/user/${$user.id}`}
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -131,6 +155,7 @@
       <Route path="/" component={LiveFeed} />
       <Route path="/user/:userId" component={UserRequests} />
       <Route path="/request/:requestId" component={RequestDetailsPage} />
+      <Route path="/profile" component={Profile} />
     </main>
 
     <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-auto">
